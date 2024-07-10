@@ -36,6 +36,12 @@ public class SummarySheet {
         return t;
     }
 
+    public void removeAllTasks() {
+        for(Task t: tasks) {
+            t.removeAssignment();
+        }
+    }
+
     public void removeTask(Task t) {
         tasks.remove(t);
     }
@@ -70,7 +76,7 @@ public class SummarySheet {
         t.getShift().addTask(t);
     }
 
-    public void removeAssigne(Task t) {
+    public void removeAssign(Task t) {
        t.removeAssignment();
     }
 
@@ -92,11 +98,6 @@ public class SummarySheet {
 
     // toString method
     public String toString() {
-        return "SummarySheet{" +
-                "sorting='" + sorting + '\'' +
-                ", tasks=" + tasks +
-                ", owner=" + owner +
-                ", service=" + service +
-                '}';
+        return "sorting: " + sorting + "\ntasks: " + tasks + "\nowner:" + owner + "\nservice[\n" + service + "]\n";
     }
 }

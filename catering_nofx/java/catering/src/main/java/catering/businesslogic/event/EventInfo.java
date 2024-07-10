@@ -58,4 +58,9 @@ public class EventInfo implements EventItemInfo {
         }
         return all;
     }
+
+    //For testing purpose
+    public void setID(int id) {
+        this.id = id;
+    }
 }

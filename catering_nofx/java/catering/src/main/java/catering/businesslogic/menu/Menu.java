@@ -1,6 +1,7 @@
 package catering.businesslogic.menu;
 
 import catering.businesslogic.CatERing;
+import catering.businesslogic.recipe.KitchenActivity;
 import catering.businesslogic.recipe.Recipe;
 import catering.businesslogic.user.User;
 import catering.persistence.BatchUpdateHandler;
@@ -409,6 +410,7 @@ public class Menu {
             @Override
             public void handle(ResultSet rs) throws SQLException {
                 int id = rs.getInt("id");
+
                 if (loadedMenus.containsKey(id)) {
                     Menu m = loadedMenus.get(id);
                     m.title = rs.getString("title");
@@ -428,6 +430,7 @@ public class Menu {
 
         for (int i = 0; i < newMenus.size(); i++) {
             Menu m = newMenus.get(i);
+            // getting owner of new menus from db
             m.owner = User.loadUserById(newMids.get(i));
 
             // load features
@@ -492,6 +495,22 @@ public class Menu {
             loadedMenus.put(m.id, m);
         }
         return new ArrayList<Menu>(loadedMenus.values());
+    }
+
+    public ArrayList<KitchenActivity> getMenuItems() {
+        ArrayList<KitchenActivity> result = new ArrayList<>();
+//        System.out.println("------------------------------------");
+//        System.out.println(freeItems.size());
+        for (MenuItem mi: freeItems) {
+            System.out.println(mi.getItemRecipe());
+            result.add(mi.getItemRecipe());
+        }
+        for (Section sec: sections) {
+            for (MenuItem mi: sec.getItems()) {
+                result.add(mi.getItemRecipe());
+            }
+        }
+        return result;
     }
 
     public static void saveSectionOrder(Menu m) {

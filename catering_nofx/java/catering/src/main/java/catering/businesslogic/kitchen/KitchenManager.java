@@ -19,10 +19,10 @@ public class KitchenManager {
     // (1) createSummarySheet. This method creates a new SummarySheet for a given service and event.
     public SummarySheet createSummarySheet(ServiceInfo service, EventInfo eventInfo) throws UseCaseLogicException, SummarySheetException {
         User user = CatERing.getInstance().getUserManager().getCurrentUser();
-        if (!user.isChef() || !service.hasMenu()) { //TODO: check if the service has a menu
+        if (!user.isChef() || !service.hasMenu()) {
             throw new UseCaseLogicException();
         }
-        if (!service.chefAssigned()) { //TODO: check if the service has a chef assigned
+        if (!service.chefAssigned()) {
             throw new SummarySheetException();
         }
         SummarySheet sumsheet = new SummarySheet(user, service);
@@ -56,8 +56,10 @@ public class KitchenManager {
             throw new SummarySheetException();
         }
         ServiceInfo service = oldSummarySheet.getService();
-        //oldSummarySheet.removeAllTasks(); // TODO: implement removeAllTasks
+        oldSummarySheet.removeAllTasks();
+        // Only thing is it's returning same tasks
         SummarySheet sumsheet = new SummarySheet(user, service);
+
         setCurrentSummarySheet(sumsheet);
         //notifySummaryRecreate(oldSummarySheet); // I don't know why this is called with oldSummarySheet (Ask Alex)
         return sumsheet;
@@ -165,7 +167,7 @@ public class KitchenManager {
         if (this.currentSummarySheet == null || !currentSummarySheet.hasTask(task)) {
             throw new UseCaseLogicException();
         }
-        currentSummarySheet.removeAssigne(task);
+        currentSummarySheet.removeAssign(task);
         //notifyAssignment(task); //TODO: implement notifySummarySheetRemoved
     }
 

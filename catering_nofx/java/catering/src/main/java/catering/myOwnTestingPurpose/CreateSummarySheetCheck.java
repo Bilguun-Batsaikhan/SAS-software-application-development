@@ -8,31 +8,67 @@ import catering.businesslogic.kitchen.SummarySheet;
 import catering.businesslogic.recipe.KitchenActivity;
 import catering.businesslogic.recipe.Recipe;
 
+import java.util.ArrayList;
+
 public class CreateSummarySheetCheck {
     SummarySheet s;
     public static void main(String[] args) {
         CreateSummarySheetCheck c = new CreateSummarySheetCheck();
         System.out.println("This is a test class for the SummarySheet class");
         CatERing.getInstance().getUserManager().fakeLogin("Lidia");
-        System.out.println(CatERing.getInstance().getUserManager().getCurrentUser());
-        KitchenManager ssm = new KitchenManager();
-        try {
-            SummarySheet s = ssm.createSummarySheet(new ServiceInfo("Test"), new EventInfo("Test"));
-            c.setSummarySheet(s);
-            System.out.println(s);
 
-            for(int i = 0; i < 5; i++) {
-                s.addTask(new Recipe("Recipe_" + i));
-            }
-            //----------------------------------------------
-            SummarySheet s1 = ssm.createSummarySheet(new ServiceInfo("Test_1"), new EventInfo("Test_2"));
-            System.out.println(s1);
-            System.out.println("Current Summary Sheet: " + ssm.getCurrentSummarySheet());
-            System.out.println("Choose Summary Sheet: " + ssm.chooseSummarySheet(s));
-            System.out.println("Current Summary Sheet: " + ssm.getCurrentSummarySheet());
+        ArrayList<EventInfo> eventInfos = CatERing.getInstance().getEventManager().getEventInfo();
+        EventInfo eventInfo = eventInfos.get(0);
+        System.out.println("EventInfo: " + eventInfo);
+        KitchenManager ssm = new KitchenManager();
+
+
+        ArrayList<ServiceInfo> serviceInfos = eventInfo.getServices();
+//        System.out.println("ServiceInfo: " + serviceInfos.get(0));
+
+        try {
+            SummarySheet sh = ssm.createSummarySheet(serviceInfos.get(2), eventInfo);
+            System.out.println("SummarySheet: " + sh);
         } catch (Exception e) {
-            System.out.println("Exception: " + e.getMessage());
+            System.out.println("Exception at createSummarySheet: " + e);
         }
+
+//        ServiceCheck sc = new ServiceCheck();
+//        ArrayList<ServiceInfo> si = sc.serviceLoadTest();
+
+//        SummarySheet sh;
+//        ArrayList<SummarySheet> summarySheets = new ArrayList<>();
+//        for(int i = 0; i < si.size(); i++) {
+//            try {
+//                sh = ssm.createSummarySheet(si.get(i), eventInfo);
+//                System.out.println(i + ": " + sh);
+//                summarySheets.add(sh);
+//            } catch (Exception e) {
+//                System.out.println("Exception at iteration " + i + ": " + e);
+//            } finally {
+//                System.out.println("-----------------");
+//            }
+//        }
+//        System.out.println("The current SUMMARY SHEET:\n" + ssm.getCurrentSummarySheet());
+//        try {
+//            ssm.chooseSummarySheet(summarySheets.get(0));
+//            System.out.println("The current SUMMARY SHEET AFTER CHOOSE:\n" + ssm.getCurrentSummarySheet());
+//        } catch (Exception e) {
+//            System.out.println("Exception at chooseSummarySheet: " + e);
+//        }
+//
+//        ArrayList<Recipe> recipes = new ArrayList<>();
+//        recipes = Recipe.loadAllRecipes();
+//        for(Recipe r: recipes) {
+//            summarySheets.get(0).addTask(r);
+//        }
+//        System.out.println("The current SUMMARY SHEET AFTER ADDING A TASK:\n" + ssm.getCurrentSummarySheet());
+//        try {
+//            ssm.recreateSummarySheet(summarySheets.get(0));
+//            System.out.println("The current SUMMARY SHEET AFTER RECREATING:\n" + ssm.getCurrentSummarySheet());
+//        } catch (Exception e) {
+//            System.out.println("Exception at recreateSummarySheet: " + e);
+//        }
     }
     public void setSummarySheet(SummarySheet s) {
         this.s = s;

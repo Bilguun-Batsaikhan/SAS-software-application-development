@@ -1,6 +1,8 @@
 package catering.businesslogic.event;
 
+import catering.businesslogic.menu.Menu;
 import catering.businesslogic.recipe.KitchenActivity;
+import catering.businesslogic.user.User;
 import catering.persistence.PersistenceManager;
 import catering.persistence.ResultHandler;
 
@@ -17,7 +19,12 @@ public class ServiceInfo implements EventItemInfo {
     private Time timeStart;
     private Time timeEnd;
     private int participants;
-    //TODO: Add approved menu_id and assigned chef_id (which is not in the db yet)
+
+    //private String place;
+    private int assignedChefID;
+    private int approvedMenuID;
+    private User assignedChef;
+    private Menu approvedMenu;
 
     public ServiceInfo(String name) {
         this.name = name;
@@ -29,21 +36,23 @@ public class ServiceInfo implements EventItemInfo {
 
 
     public String toString() {
-        return name + ": " + date + " (" + timeStart + "-" + timeEnd + "), " + participants + " pp.";
+        return name + ": " + date + " (" + timeStart + "-" + timeEnd + "), \n" + "participants: " + participants + " pp. \n" + "Chef: " + assignedChef + "\n" + "Menu: " + approvedMenu + ".\n";
     }
 
-    //TODO: Implement the following methods, this information comes from db
     public boolean hasMenu() {
-        return true;
-    }
-
-    public ArrayList<KitchenActivity> getKitchenActivities() {
-        return new ArrayList<>();
+        return this.approvedMenu != null;
     }
 
     public boolean chefAssigned() {
-        return true;
+        return this.assignedChef != null;
     }
+
+    //TODO: implement getKitchenActivities
+    public ArrayList<KitchenActivity> getKitchenActivities() {
+        return this.approvedMenu.getMenuItems();
+        //return new ArrayList<>();
+    }
+
 
 
 
@@ -51,22 +60,32 @@ public class ServiceInfo implements EventItemInfo {
     // This method is used to load all the services for a given event from the database.
     public static ArrayList<ServiceInfo> loadServiceInfoForEvent(int event_id) {
         ArrayList<ServiceInfo> result = new ArrayList<>();
-        String query = "SELECT id, name, service_date, time_start, time_end, expected_participants " +
-                "FROM Services WHERE event_id = " + event_id;
+        String query = "SELECT id, name, approved_menu_id, service_date, time_start, time_end, expected_participants, assigned_chef_id FROM Services WHERE event_id = " + event_id;
         PersistenceManager.executeQuery(query, new ResultHandler() {
             @Override
             public void handle(ResultSet rs) throws SQLException {
                 String s = rs.getString("name");
                 ServiceInfo serv = new ServiceInfo(s);
                 serv.id = rs.getInt("id");
+                serv.approvedMenuID = rs.getInt("approved_menu_id");
                 serv.date = rs.getDate("service_date");
                 serv.timeStart = rs.getTime("time_start");
                 serv.timeEnd = rs.getTime("time_end");
                 serv.participants = rs.getInt("expected_participants");
+                serv.assignedChefID = rs.getInt("assigned_chef_id");
                 result.add(serv);
             }
         });
-
+        for(ServiceInfo s: result) {
+            s.assignedChef = User.loadUserById(s.assignedChefID);
+            ArrayList<Menu> menus = Menu.loadAllMenus();
+            for(Menu m: menus) {
+                if(m.getId() == s.approvedMenuID) {
+                    s.approvedMenu = m;
+                    //System.out.println(m.getMenuItems());
+                }
+            }
+        }
         return result;
     }
 }
