@@ -18,7 +18,7 @@ public class Recipe extends KitchenActivity {
     }
 
     public Recipe(String name) {
-        super(name); // I added it
+        super(name);
         id = 0;
         this.name = name;
     }
@@ -46,9 +46,13 @@ public class Recipe extends KitchenActivity {
                 if (all.containsKey(id)) {
                     Recipe rec = all.get(id);
                     rec.name = rs.getString("name");
+                    rec.difficulty = KitchenActivity.Difficulty.fromInt(rs.getInt("difficulty"));
+                    //System.out.println("Recipe: " + rec.getName() + " - " + rec.getDifficulty());
                 } else {
                     Recipe rec = new Recipe(rs.getString("name"));
                     rec.id = id;
+                    rec.difficulty = KitchenActivity.Difficulty.fromInt(rs.getInt("difficulty"));
+                    //System.out.println("Recipe: " + rec.getName() + " - " + rec.getDifficulty());
                     all.put(rec.id, rec);
                 }
             }

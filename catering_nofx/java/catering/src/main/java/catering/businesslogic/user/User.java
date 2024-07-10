@@ -25,6 +25,7 @@ public class User {
         id = 0;
         username = "";
         this.roles = new HashSet<>();
+        tasks = new ArrayList<>();
     }
 
     // Constructor for testing purposes ---------------------------------------------
@@ -32,6 +33,7 @@ public class User {
         this.id = id;
         this.roles = roles;
         this.username = username;
+        tasks = new ArrayList<>();
     }
     //--------------------------------------------------------------------------------
 

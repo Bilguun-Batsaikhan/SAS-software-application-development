@@ -36,7 +36,7 @@ public class ServiceInfo implements EventItemInfo {
 
 
     public String toString() {
-        return name + ": " + date + " (" + timeStart + "-" + timeEnd + "), \n" + "participants: " + participants + " pp. \n" + "Chef: " + assignedChef + "\n" + "Menu: " + approvedMenu + ".\n";
+        return name + ": " + date + " (" + timeStart + "-" + timeEnd + "), \n" + "participants: " + participants + " pp. \n" + "Assigned chef: " + assignedChef + "\n" + "Menu: " + approvedMenu + ".\n";
     }
 
     public boolean hasMenu() {
@@ -82,7 +82,7 @@ public class ServiceInfo implements EventItemInfo {
             for(Menu m: menus) {
                 if(m.getId() == s.approvedMenuID) {
                     s.approvedMenu = m;
-                    //System.out.println(m.getMenuItems());
+                    //.println(m.getMenuItems());
                 }
             }
         }

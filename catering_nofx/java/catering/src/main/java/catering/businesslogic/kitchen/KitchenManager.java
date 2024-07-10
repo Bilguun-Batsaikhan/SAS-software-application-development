@@ -7,7 +7,6 @@ import catering.businesslogic.event.EventInfo;
 import catering.businesslogic.event.ServiceInfo;
 import catering.businesslogic.recipe.KitchenActivity;
 import catering.businesslogic.shift.KitchenShift;
-import catering.businesslogic.shift.Shift;
 import catering.businesslogic.user.User;
 
 import java.util.ArrayList;
@@ -15,6 +14,10 @@ import java.util.ArrayList;
 public class KitchenManager {
     private SummarySheet currentSummarySheet;
     private ArrayList<SummaryEventReciever> summaryReceivers;
+
+    public KitchenManager() {
+        this.summaryReceivers = new ArrayList<>();
+    }
 
     // (1) createSummarySheet. This method creates a new SummarySheet for a given service and event.
     public SummarySheet createSummarySheet(ServiceInfo service, EventInfo eventInfo) throws UseCaseLogicException, SummarySheetException {
@@ -27,7 +30,7 @@ public class KitchenManager {
         }
         SummarySheet sumsheet = new SummarySheet(user, service);
         setCurrentSummarySheet(sumsheet);
-        //notifySummarySheetAdded(sumsheet); //TODO: implement notifySummarySheetAdded
+        notifySummarySheetAdded(sumsheet);
 
         return sumsheet;
     }
@@ -68,11 +71,11 @@ public class KitchenManager {
     // (2) addTask. This method adds a task to the currentSummarySheet.
     public Task addTask(KitchenActivity ka) throws UseCaseLogicException, SummarySheetException {
         Task t = currentSummarySheet.addTask(ka);
-        //notifyTaskAdded(t); //TODO: implement notifyTaskAdded
+        notifyTaskAdded(currentSummarySheet, t);
         return t; // why return here?
     }
 
-    // TODO: when we add the kitchen activities in database, add also difficulty and estimated time
+
     // (3) sortSummarySheet. This method swaps two tasks in the currentSummarySheet.
     public void sortSummarySheet(String sortType, Task firstTask, Task secondTask) {
         currentSummarySheet.sort(sortType, firstTask, secondTask); // I really don't know why we have to pass the sortType??? (Ask Alex)
@@ -81,16 +84,9 @@ public class KitchenManager {
 
     // (5) assignTask. This method assigns a task to a cook from current summary sheet (task should be already added).
     public void assignTask(Task task, KitchenShift shift, User cook, int portion, int quantity, int estimatedTime) throws UseCaseLogicException, SummarySheetException {
-        int totalDuration = 0;
-        int totalEstimatedTime = 0;
         if (this.currentSummarySheet == null || !currentSummarySheet.hasTask(task)) {
             throw new UseCaseLogicException();
         }
-//        if(shift instanceof KitchenShift) {
-//            if(!((KitchenShift) shift).isAssigned()) {
-//                throw new UseCaseLogicException();
-//            }
-//        } maybe also we should check if the shift is assigned
 
         if (checkTotalDuration(task, shift, estimatedTime, cook)) {
             task.assignTask(shift, cook, portion, quantity, estimatedTime);
@@ -193,15 +189,26 @@ public class KitchenManager {
     }
 
     // (4) getShiftBoard (this might've changed in the DSD, check it out)
-    public ArrayList<Shift> getShiftBoard() {
+    public ArrayList<KitchenShift> getShiftBoard() {
         return CatERing.getInstance().getShiftManager().getShiftBoard(); //TODO: initialize getShiftBoard
     }
 
-    // notify
+    // notify 1
     private void notifySummarySheetAdded(SummarySheet sumsheet) {
         for (SummaryEventReciever r : this.summaryReceivers) {
-            //r.updateTaskAdded(sumsheet); //TODO: implement updateTaskAdded
+            //r.updateTaskCreated(sumsheet); TODO: move it to task added
+            r.updateSummaryCreated(sumsheet);
         }
+    }
+    // notify 2
+    public void notifyTaskAdded(SummarySheet sumsheet, Task t) {
+        for (SummaryEventReciever r : this.summaryReceivers) {
+            r.updateTaskCreated(sumsheet, t);
+        }
+    }
+
+    public void addEventReceiver(SummaryEventReciever r) {
+        this.summaryReceivers.add(r);
     }
 
     // toString method

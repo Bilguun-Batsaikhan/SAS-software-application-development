@@ -1,6 +1,9 @@
 package catering.businesslogic;
 
 import catering.businesslogic.event.EventManager;
+import catering.businesslogic.kitchen.KitchenManager;
+import catering.businesslogic.kitchen.KitchenPersistence;
+import catering.businesslogic.kitchen.SummaryEventReciever;
 import catering.businesslogic.menu.MenuManager;
 import catering.businesslogic.recipe.RecipeManager;
 import catering.businesslogic.shift.ShiftManager;
@@ -24,6 +27,8 @@ public class CatERing {
 
     // I added
     private ShiftManager shiftMgr;
+    private KitchenManager kitchenMgr;
+    private KitchenPersistence kitchenPersistence;
 
     private MenuPersistence menuPersistence;
 
@@ -36,6 +41,10 @@ public class CatERing {
 
         // I added
         shiftMgr = new ShiftManager();
+        kitchenMgr = new KitchenManager();
+        kitchenPersistence = new KitchenPersistence();
+        kitchenMgr.addEventReceiver(kitchenPersistence);
+
 
         menuMgr.addEventReceiver(menuPersistence);
     }
@@ -57,5 +66,9 @@ public class CatERing {
 
     public ShiftManager getShiftManager() {
         return shiftMgr;
+    }
+
+    public KitchenManager getKitchenManager() {
+        return kitchenMgr;
     }
 }

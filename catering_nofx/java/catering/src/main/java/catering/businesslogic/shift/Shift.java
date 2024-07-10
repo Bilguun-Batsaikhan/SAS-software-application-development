@@ -15,4 +15,6 @@ public abstract class Shift {
 //    public ArrayList<Shift> getShiftsInGroup() { // probably not needed
 //        return new ArrayList<>();
 //    }
+
+
 }

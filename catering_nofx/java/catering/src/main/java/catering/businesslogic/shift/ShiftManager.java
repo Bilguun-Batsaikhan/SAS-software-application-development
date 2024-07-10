@@ -2,13 +2,13 @@ package catering.businesslogic.shift;
 import java.util.ArrayList;
 
 public class ShiftManager {
-    ArrayList<Shift> shiftBoard; //TODO: Initialize shiftBoard
+    ArrayList<KitchenShift> shiftBoard; //TODO: Initialize shiftBoard
 
     public ShiftManager() {
-        shiftBoard = new ArrayList<Shift>(); //TODO: Initialize shiftBoard
+        shiftBoard = KitchenShift.loadAllKitchenShift();
     }
 
-    public ArrayList<Shift> getShiftBoard() {
+    public ArrayList<KitchenShift> getShiftBoard() {
         return shiftBoard;
     }
 }

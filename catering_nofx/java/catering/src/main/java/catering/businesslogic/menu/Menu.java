@@ -502,7 +502,7 @@ public class Menu {
 //        System.out.println("------------------------------------");
 //        System.out.println(freeItems.size());
         for (MenuItem mi: freeItems) {
-            System.out.println(mi.getItemRecipe());
+            //System.out.println(mi.getItemRecipe());
             result.add(mi.getItemRecipe());
         }
         for (Section sec: sections) {

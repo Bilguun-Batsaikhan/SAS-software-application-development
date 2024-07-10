@@ -4,6 +4,13 @@ import catering.businesslogic.recipe.KitchenActivity;
 import catering.businesslogic.shift.KitchenShift;
 import catering.businesslogic.shift.Shift;
 import catering.businesslogic.user.User;
+import catering.persistence.BatchUpdateHandler;
+import catering.persistence.PersistenceManager;
+
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 
 public class Task {
     //TODO: initialize variables
@@ -85,8 +92,38 @@ public class Task {
         return shift;
     }
 
+    public KitchenActivity getActivity() {
+        return activity;
+    }
+
+    public static void saveKitchenTask(SummarySheet summarySheet) {
+        String activitiesToInsert = "INSERT INTO catering.kitchentask (estimatedTime, portion, quantity, completed, activityId, cookId, shiftId) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        ArrayList<Task> tasks = summarySheet.getTasks();
+        PersistenceManager.executeBatchUpdate(activitiesToInsert, tasks.size(), new BatchUpdateHandler() {
+            @Override
+            public void handleBatchItem(PreparedStatement ps, int batchCount) throws SQLException {
+                Task task = tasks.get(batchCount);
+                ps.setInt(1, task.getEstimatedTime());
+                ps.setInt(2, 0);
+                ps.setInt(3, 0);
+                ps.setBoolean(4, false);
+                ps.setInt(5, task.getActivity().getId());
+                ps.setNull(6, java.sql.Types.INTEGER); // Use NULL for cookId
+                ps.setNull(7, java.sql.Types.INTEGER); // Use NULL for shiftId
+            }
+
+            @Override
+            public void handleGeneratedIds(ResultSet rs, int count) throws SQLException {
+                if (count == 0) {
+                    int generatedId = rs.getInt(1);
+                    System.out.println("Generated ID: " + generatedId);
+                }
+            }
+        });
+    }
+
     public String toString() {
-        return activity.getName();
+        return "Task: " + activity.getName() + " User: " + this.cook + " Shift: " + this.shift + " Portion: " + this.portion + " Quantity: " + this.quantity + " Estimated Time: " + this.estimatedTime + " Completed: " + this.completed + "\n";
     }
 
 }
