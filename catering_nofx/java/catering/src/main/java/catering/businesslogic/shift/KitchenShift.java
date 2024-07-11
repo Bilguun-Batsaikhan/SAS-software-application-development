@@ -13,6 +13,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class KitchenShift extends Shift {
+    public int getId() {
+        return id;
+    }
+
     private int id;
     int duration;
     GroupShift group;
@@ -120,6 +124,6 @@ public class KitchenShift extends Shift {
     }
 
     public String toString() {
-        return "id: " + id + " place: " + place;
+        return "id: " + id + " place: " + place + " recurring: " + recurring + " duration: " + duration;
     }
 }

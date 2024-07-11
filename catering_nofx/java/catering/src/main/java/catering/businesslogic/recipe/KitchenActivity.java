@@ -34,20 +34,24 @@ public abstract class KitchenActivity {
         if(loadedActivities.containsKey(id)) {
             return loadedActivities.get(id);
         }
-        KitchenActivity load = new Recipe("");
+        Recipe load = new Recipe("");
         String userQuery = "SELECT * FROM recipes WHERE id='"+id+"'";
         PersistenceManager.executeQuery(userQuery, new ResultHandler() {
             @Override
             public void handle(ResultSet rs) throws SQLException {
-                load.id = rs.getInt("id");
-                load.name = rs.getString("name");
+                load.setId(rs.getInt("id"));
+                load.setName(rs.getString("name"));
                 load.difficulty = Difficulty.fromInt(rs.getInt("difficulty"));
             }
         });
-        if(load.id > 0) {
-            loadedActivities.put(load.id, load);
+        if(load.getId() > 0) {
+            loadedActivities.put(load.getId(), load);
         }
         return load;
+    }
+
+    public String toString() {
+        return name;
     }
 
     public static enum Difficulty {

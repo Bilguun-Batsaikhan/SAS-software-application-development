@@ -115,35 +115,43 @@ public class Task {
 
     //this method should be called from summarySheet load
     public static ArrayList<Task> loadTasksBySumSheetId(int summary_sheet_id) {
-        if (loadedTasks.containsKey(summary_sheet_id)) return loadedTasks.get(summary_sheet_id);
+        // Check if the tasks for the given summary_sheet_id are already loaded
+        if (loadedTasks.containsKey(summary_sheet_id)) {
+            return loadedTasks.get(summary_sheet_id);
+        }
 
-        Task load = new Task(null);
         ArrayList<Task> loadedTasksBySumSheetId = new ArrayList<>();
-        String taskQuery = "SELECT * FROM kitchentask WHERE summarysheet_id='"+summary_sheet_id+"'";
+        String taskQuery = "SELECT * FROM kitchentask WHERE summarysheet_id=" + summary_sheet_id;
         PersistenceManager.executeQuery(taskQuery, new ResultHandler() {
             @Override
             public void handle(ResultSet rs) throws SQLException {
-                load.id = rs.getInt("id");
-                load.estimatedTime = rs.getInt("estimatedTime");
-                load.portion = rs.getInt("portion");
-                load.quantity = rs.getInt("quantity");
-                load.completed = rs.getBoolean("completed");
-                load.activity_id = rs.getInt("activityId");
-                load.cook_id = rs.getInt("cookId");
-                load.shift_id = rs.getInt("shiftId");
-                load.summarysheet_id = rs.getInt("summarysheet_id");
-                loadedTasksBySumSheetId.add(load);
+                    Task load = new Task(null); // Create a new Task object for each row
+                    load.id = rs.getInt("id");
+                    load.estimatedTime = rs.getInt("estimatedTime");
+                    load.portion = rs.getInt("portion");
+                    load.quantity = rs.getInt("quantity");
+                    load.completed = rs.getBoolean("completed");
+                    load.activity_id = rs.getInt("activityId");
+                    load.cook_id = rs.getInt("cookId");
+                    load.shift_id = rs.getInt("shiftId");
+                    load.summarysheet_id = rs.getInt("summarysheet_id");
+                    loadedTasksBySumSheetId.add(load); // Add the Task to the list
             }
         });
-        //initialize the other Class type parameters: KitchenActivity, User, KitchenShift
+
+        // Initialize the other Class type parameters: KitchenActivity, User, KitchenShift
         for (Task t : loadedTasksBySumSheetId) {
             t.activity = KitchenActivity.loadActivityById(t.activity_id);
             t.cook = User.loadUserById(t.cook_id);
             t.shift = KitchenShift.loadKitchenShiftById(t.shift_id);
         }
-        loadedTasks.put(summary_sheet_id, loadedTasksBySumSheetId); // I think I also should add this to the loadedTasks
+
+        // Cache the loaded tasks for future reference
+        loadedTasks.put(summary_sheet_id, loadedTasksBySumSheetId);
         return loadedTasksBySumSheetId;
     }
+
+
 
     public static ArrayList<Task> loadTasksByShiftId(int id) {
         String query = "SELECT * FROM kitchentask WHERE shiftId="+ id;
@@ -248,9 +256,96 @@ public class Task {
             }
         });
     }
-
-    public String toString() {
-        return "Task: " + activity.getName() + " User: " + this.cook + " Shift: " + this.shift + " Portion: " + this.portion + " Quantity: " + this.quantity + " Estimated Time: " + this.estimatedTime + " Completed: " + this.completed + "\n";
+    // update
+    public static void saveUpdateTask(Task task, boolean changeCook) {
+        String query;
+        if (changeCook){
+            query = "UPDATE kitchentask SET shiftId = " + task.shift.getId() +
+                    ", cookId = " + task.cook.getId() +
+                    ", portion = " + task.getPortion() +
+                    ", quantity = " + task.getQuantity() +
+                    ", estimatedTime = " + task.getEstimatedTime() +
+                    " WHERE id = " + task.getId();
+        } else {
+            query = "UPDATE kitchentask SET shiftId = " + task.shift.getId() +
+                    ", portion = " + task.getPortion() +
+                    ", quantity = " + task.getQuantity() +
+                    ", estimatedTime = " + task.getEstimatedTime() +
+                    " WHERE id = " + task.getId();
+        }
+        PersistenceManager.executeUpdate(query);
     }
 
+    public static void saveUpdateByModifyTask(Task task) {
+        StringBuilder queryBuilder = new StringBuilder("UPDATE kitchentask SET ");
+        Boolean bool = true;
+        appendCondition(queryBuilder, "shiftId", task.getShift() != null ? task.getShift().getId() : null, bool);
+        bool = false;
+        appendCondition(queryBuilder, "cookId", task.getCook() != null ? task.getCook().getId() : null, bool);
+        appendCondition(queryBuilder, "portion", task.getPortion(), bool);
+        appendCondition(queryBuilder, "quantity", task.getQuantity(), bool);
+        appendCondition(queryBuilder, "estimatedTime", task.getEstimatedTime(), bool);
+
+        queryBuilder.append(" WHERE id = ").append(task.getId());
+
+        String query = queryBuilder.toString();
+        PersistenceManager.executeUpdate(query);
+    }
+
+    public static void appendCondition(StringBuilder queryBuilder, String columnName, Object value, Boolean bool) {
+        if (value != null) {
+            if (bool) {
+                queryBuilder.append(columnName).append(" = ").append(value instanceof String ? "'" + value + "'" : value);
+            }
+            queryBuilder.append(", ");
+            queryBuilder.append(columnName).append(" = ").append(value instanceof String ? "'" + value + "'" : value);
+        }
+    }
+
+    public static void saveRemoveAssignTask(Task task) {
+        String query = "UPDATE kitchentask SET shiftId = " + null+
+                ", cookId = " + null +
+                ", portion = " + 0 +
+                ", quantity = " + 0 +
+                ", estimatedTime = " + 0 +
+                " WHERE id = " + task.getId();;
+        PersistenceManager.executeUpdate(query);
+    }
+
+    public static void saveCompleteTask(Task task) {
+        String query = "UPDATE kitchentask SET shiftId = " + null+
+                ", cookId = " + null +
+                ", completed = " + 1 +
+                " WHERE id = " + task.getId();;
+        PersistenceManager.executeUpdate(query);
+    }
+
+    public static void saveRemoveTask(Task t) {
+        String rem = "DELETE FROM kitchentask WHERE id = " + t.getId();
+        System.out.println(t.getId());
+        PersistenceManager.executeUpdate(rem);
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public int getPortion() {
+        return portion;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    @Override
+    public String toString() {
+        return "Task: " + activity.getName() +
+                " \nUser: " + (cook != null ? cook.toString() : "null") +
+                " \nShift: " + (shift != null ? shift.toString() : "null") +
+                " \nPortion: " + portion +
+                " \nQuantity: " + quantity +
+                " \nEstimated Time: " + estimatedTime +
+                " \nCompleted: " + completed + "\n-------------------\nid" + this.id;
+    }
 }

@@ -40,7 +40,7 @@ public class ServiceInfo implements EventItemInfo {
 
 
     public String toString() {
-        return name + ": " + date + " (" + timeStart + "-" + timeEnd + "), \n" + "participants: " + participants + " pp. \n" + "Assigned chef: " + assignedChef + "\n" + "Menu: " + approvedMenu + ".\n";
+        return "ID: " + this.id + " "+ name + ": " + date + " (" + timeStart + "-" + timeEnd + "), \n" + "participants: " + participants + " pp. \n" + "Assigned chef: " + assignedChef + "\n" + "Menu: " + approvedMenu + ".\n";
     }
 
     public boolean hasMenu() {
@@ -61,7 +61,7 @@ public class ServiceInfo implements EventItemInfo {
 
     public static void saveSummaryId(int id, int service_id)
     {
-        String upd = "UPDATE services SET summary_id = '" + id +
+        String upd = "UPDATE services SET sumsheet_id = " + id +
                 " WHERE id = " + service_id;
         PersistenceManager.executeUpdate(upd);
     }
@@ -117,6 +117,13 @@ public class ServiceInfo implements EventItemInfo {
                 load.approvedMenuID = rs.getInt("approved_menu_id");
             }
         });
+        load.assignedChef = User.loadUserById(load.assignedChefID);
+        ArrayList<Menu> menus = Menu.loadAllMenus();
+        for(Menu m: menus) {
+            if(m.getId() == load.approvedMenuID) {
+                load.approvedMenu = m;
+            }
+        }
         loadedServices.put(load.id, load);
         return load;
     }

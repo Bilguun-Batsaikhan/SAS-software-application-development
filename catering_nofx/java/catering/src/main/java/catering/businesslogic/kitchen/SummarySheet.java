@@ -39,6 +39,11 @@ public class SummarySheet {
             tasks.add(t);
         }
     }
+    public SummarySheet() {
+        this.id = 0;
+        this.tasks = new ArrayList<>();
+        this.sorting = "default";
+    }
     public static void saveKitchenSummary(SummarySheet summarySheet) {
         // SQL query to insert a summary sheet
         String summaryInsertQuery = "INSERT INTO summarysheet (sorting, owner_id, service_id) VALUES (?, ?, ?)";
@@ -90,7 +95,7 @@ public class SummarySheet {
                     oldSummarySheetOwnerIds.add(rs.getInt("service_id"));
                     oldSummarySheets.add(s);
                 } else {
-                    SummarySheet s = new SummarySheet(null, null);
+                    SummarySheet s = new SummarySheet();
                     s.id = id;
                     s.sorting = rs.getString("sorting");
                     s.owner_id = rs.getInt("owner_id");
@@ -217,6 +222,6 @@ public class SummarySheet {
 
     // toString method
     public String toString() {
-        return "sorting: " + sorting + "\ntasks: " + tasks + "\nowner:" + owner + "\nservice[\n" + service + "]\n";
+        return "ID: " + this.id + " sorting: " + sorting + " \nowner:" + owner + "\nservice[\n" + service + "]\n";
     }
 }

@@ -94,16 +94,21 @@ public class KitchenManager {
             throw new SummarySheetException();
         }
         // in DSD I wrote notifyAssignSummarySheet(Task)
-        //notifySummarySheetAssigned(task); //TODO: implement notifySummarySheetAssigned
+        notifySummarySheetAssigned(task, true); //TODO: implement notifySummarySheetAssigned
     }
 
+    private void notifySummarySheetAssigned(Task task, boolean changeCook) {
+        for (SummaryEventReciever r : this.summaryReceivers) {
+            r.updateTaskAssigned(this.getCurrentSummarySheet(), task, changeCook);
+        }
+    }
     // (5a) assign task without cook
     public void assignTaskWithoutCook(Task task, KitchenShift shift, int portion, int quantity, int estimatedTime) throws UseCaseLogicException {
         if (this.currentSummarySheet == null || !currentSummarySheet.hasTask(task)) {
             throw new UseCaseLogicException();
         }
         currentSummarySheet.assignTaskWithoutCook(task, shift, portion, quantity, estimatedTime);
-        //notifySummarySheetAssigned(task); //TODO: implement notifySummarySheetAssigned
+        notifySummarySheetAssigned(task,false); //TODO: implement notifySummarySheetAssigned
     }
 
     // getters and setters for currentSummarySheet
@@ -155,18 +160,26 @@ public class KitchenManager {
         } else {
             throw new SummarySheetException();
         }
-        //notifySummarySheetModified(task); //TODO: implement notifySummarySheetModified
+        notifySummarySheetModified(task); //TODO: implement notifySummarySheetModified
     }
-
+    private void notifySummarySheetModified(Task task) {
+        for (SummaryEventReciever r : this.summaryReceivers) {
+            r.updateTaskModify(this.getCurrentSummarySheet(), task);
+        }
+    }
     // (5c) remove assignment from task
     public void removeAssignment(Task task) throws UseCaseLogicException {
         if (this.currentSummarySheet == null || !currentSummarySheet.hasTask(task)) {
             throw new UseCaseLogicException();
         }
         currentSummarySheet.removeAssign(task);
-        //notifyAssignment(task); //TODO: implement notifySummarySheetRemoved
+        notifyRemoveAssignment(task); //TODO: implement notifySummarySheetRemoved
     }
-
+    private void notifyRemoveAssignment(Task task) {
+        for (SummaryEventReciever r : this.summaryReceivers) {
+            r.updateTaskRemoveAssign(this.getCurrentSummarySheet(), task);
+        }
+    }
     // (5d) remove task
     public void removeTask(Task task) throws UseCaseLogicException, SummarySheetException {
         if (this.currentSummarySheet == null || !currentSummarySheet.hasTask(task)) {
@@ -175,8 +188,10 @@ public class KitchenManager {
         if(task.getCook() != null || task.getShift() != null) {
             throw new SummarySheetException();
         }
+        Task temp = task;
         currentSummarySheet.removeTask(task);
-        //notifyRemoveTask(task); //TODO: implement notifySummarySheetRemoved
+
+        notifyRemoveTask(currentSummarySheet,temp); //TODO: implement notifySummarySheetRemoved
     }
 
     // (5e) completeTask
@@ -185,9 +200,18 @@ public class KitchenManager {
             throw new UseCaseLogicException();
         }
         currentSummarySheet.completeTask(task);
-        //notifyTaskCompleted(task); //TODO: implement notifyTaskCompleted
+        notifyTaskCompleted(task); //TODO: implement notifyTaskCompleted
     }
-
+    private void notifyRemoveTask(SummarySheet currentSummarySheet, Task task) {
+        for (SummaryEventReciever r : this.summaryReceivers) {
+            r.updateRemoveTask(this.getCurrentSummarySheet(), task);
+        }
+    }
+    private void notifyTaskCompleted(Task task) {
+        for (SummaryEventReciever r : this.summaryReceivers) {
+            r.updateCompleteTask(this.getCurrentSummarySheet(), task);
+        }
+    }
     // (4) getShiftBoard (this might've changed in the DSD, check it out)
     public ArrayList<KitchenShift> getShiftBoard() {
         return CatERing.getInstance().getShiftManager().getShiftBoard(); //TODO: initialize getShiftBoard
