@@ -1,6 +1,16 @@
 package catering.businesslogic.recipe;
 
+import catering.businesslogic.user.User;
+import catering.persistence.PersistenceManager;
+import catering.persistence.ResultHandler;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
+
 public abstract class KitchenActivity {
+    private static Map<Integer, KitchenActivity> loadedActivities = new HashMap<>();
     int id;
     String name;
     Difficulty difficulty;
@@ -18,6 +28,26 @@ public abstract class KitchenActivity {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public static KitchenActivity loadActivityById(int id) {
+        if(loadedActivities.containsKey(id)) {
+            return loadedActivities.get(id);
+        }
+        KitchenActivity load = new Recipe("");
+        String userQuery = "SELECT * FROM recipes WHERE id='"+id+"'";
+        PersistenceManager.executeQuery(userQuery, new ResultHandler() {
+            @Override
+            public void handle(ResultSet rs) throws SQLException {
+                load.id = rs.getInt("id");
+                load.name = rs.getString("name");
+                load.difficulty = Difficulty.fromInt(rs.getInt("difficulty"));
+            }
+        });
+        if(load.id > 0) {
+            loadedActivities.put(load.id, load);
+        }
+        return load;
     }
 
     public static enum Difficulty {

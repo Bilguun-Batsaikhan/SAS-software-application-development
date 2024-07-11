@@ -1,9 +1,6 @@
 package catering.businesslogic.kitchen;
 
 import catering.businesslogic.event.ServiceInfo;
-import catering.businesslogic.menu.Menu;
-import catering.businesslogic.menu.MenuItem;
-import catering.businesslogic.menu.Section;
 import catering.businesslogic.recipe.KitchenActivity;
 import catering.businesslogic.shift.KitchenShift;
 import catering.businesslogic.user.User;
@@ -108,25 +105,22 @@ public class SummarySheet {
             SummarySheet s = newSummarySheets.get(i);
             // Create the owner from new summary sheet owner ids
             s.owner = User.loadUserById(newSummarySheetOwnerIds.get(i));
+            s.service = ServiceInfo.loadServiceBySumSheetId(newSummarySheetServiceIds.get(i));
+            s.tasks = Task.loadTasksBySumSheetId(s.id);
         }
         for (int i = 0; i < oldSummarySheets.size(); i++) {
             SummarySheet s = oldSummarySheets.get(i);
             // Create the owner from old summary sheet owner ids
             s.owner = User.loadUserById(oldSummarySheetOwnerIds.get(i));
+            s.service = ServiceInfo.loadServiceBySumSheetId(oldSummarySheetsServiceIds.get(i));
+            s.tasks = Task.loadTasksBySumSheetId(s.id);
         }
-        for(int i = 0; i < newSummarySheets.size(); i++) {
-            SummarySheet s = newSummarySheets.get(i);
-            // Create the service from new summary sheet service ids
-            s.service = ServiceInfo.loadServiceById(newSummarySheetServiceIds.get(i)); //TODO: implement loadServiceById
-        }
-        for(int i = 0; i < oldSummarySheets.size(); i++) {
-            SummarySheet s = oldSummarySheets.get(i);
-            // Create the service from old summary sheet service ids
-            s.service = ServiceInfo.loadServiceById(oldSummarySheetsServiceIds.get(i)); //TODO: implement loadServiceById
-        }
+
         for(SummarySheet s: newSummarySheets) {
             loadedSummarySheets.put(s.id, s);
         }
+        //TODO: implement loadTasksBySumSheetId
+
         return new ArrayList<SummarySheet>(loadedSummarySheets.values());
     }
 

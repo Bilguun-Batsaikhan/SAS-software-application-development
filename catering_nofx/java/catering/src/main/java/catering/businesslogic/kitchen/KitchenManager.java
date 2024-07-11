@@ -31,7 +31,7 @@ public class KitchenManager {
         SummarySheet sumsheet = new SummarySheet(user, service);
         setCurrentSummarySheet(sumsheet);
         notifySummarySheetAdded(sumsheet);
-
+        ServiceInfo.saveSummaryId(sumsheet.getId(),service.getId());
         return sumsheet;
     }
 

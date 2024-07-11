@@ -48,7 +48,6 @@ public class KitchenShift extends Shift {
 //        // for now return true
 //        return true;
     }
-
     public static ArrayList<KitchenShift> loadAllKitchenShift() {
         String query = "SELECT * FROM kitchenshift";
         PersistenceManager.executeQuery(query, new ResultHandler() {
@@ -70,7 +69,38 @@ public class KitchenShift extends Shift {
                 }
             }
         });
+        //(estimatedTime, portion, quantity, completed, activityId, cookId, shiftId, summarysheet_id)
+        for (Map.Entry<Integer, KitchenShift> entry : all.entrySet()) {
+            KitchenShift ks = entry.getValue();
+            ks.tasks = Task.loadTasksByShiftId(ks.id);
+            for(Task inside: ks.tasks)
+            {
+                inside.setKitchenShift(ks);
+            }
+        }
         return new ArrayList<KitchenShift>(all.values());
+    }
+
+    public static KitchenShift loadKitchenShiftById(int id) {
+        if (all.containsKey(id)) {
+            return all.get(id);
+        }
+        KitchenShift load = new KitchenShift();
+        String query = "SELECT * FROM kitchenshift WHERE id='" + id + "'";
+        PersistenceManager.executeQuery(query, new ResultHandler() {
+            @Override
+            public void handle(ResultSet rs) throws SQLException {
+                load.id = rs.getInt("id");
+                load.place = rs.getString("place");
+                load.recurring = rs.getInt("recurring") == 1;
+                load.duration = rs.getInt("duration");
+            }
+        });
+        load.tasks = Task.loadTasksByShiftId(id);
+        if (load.id > 0) {
+            all.put(load.id, load);
+        }
+        return load;
     }
 
     public void addTask(Task task) {

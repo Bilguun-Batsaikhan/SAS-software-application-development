@@ -11,8 +11,12 @@ import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Time;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ServiceInfo implements EventItemInfo {
+    private static Map<Integer, ServiceInfo> loadedServices = new HashMap<Integer, ServiceInfo>();
+
     private int id;
     private String name;
     private Date date;
@@ -55,7 +59,12 @@ public class ServiceInfo implements EventItemInfo {
 
 
 
-
+    public static void saveSummaryId(int id, int service_id)
+    {
+        String upd = "UPDATE services SET summary_id = '" + id +
+                " WHERE id = " + service_id;
+        PersistenceManager.executeUpdate(upd);
+    }
     // STATIC METHODS FOR PERSISTENCE
     // This method is used to load all the services for a given event from the database.
     public static ArrayList<ServiceInfo> loadServiceInfoForEvent(int event_id) {
@@ -78,6 +87,7 @@ public class ServiceInfo implements EventItemInfo {
         });
         for(ServiceInfo s: result) {
             s.assignedChef = User.loadUserById(s.assignedChefID);
+            loadedServices.put(s.id, s);
             ArrayList<Menu> menus = Menu.loadAllMenus();
             for(Menu m: menus) {
                 if(m.getId() == s.approvedMenuID) {
@@ -87,5 +97,27 @@ public class ServiceInfo implements EventItemInfo {
             }
         }
         return result;
+    }
+
+    public static ServiceInfo loadServiceBySumSheetId(int sumsheet_id) {
+        if(loadedServices.containsKey(sumsheet_id)) return loadedServices.get(sumsheet_id);
+        ServiceInfo load = new ServiceInfo("");
+        //we don't have sumsheet id in services table!!!
+        String userQuery = "SELECT * FROM services WHERE sumsheet_id='"+sumsheet_id+"'";
+        PersistenceManager.executeQuery(userQuery, new ResultHandler() {
+            @Override
+            public void handle(ResultSet rs) throws SQLException {
+                load.id = rs.getInt("id");
+                load.name = rs.getString("name");
+                load.date = rs.getDate("service_date");
+                load.timeStart = rs.getTime("time_start");
+                load.timeEnd = rs.getTime("time_end");
+                load.participants = rs.getInt("expected_participants");
+                load.assignedChefID = rs.getInt("assigned_chef_id");
+                load.approvedMenuID = rs.getInt("approved_menu_id");
+            }
+        });
+        loadedServices.put(load.id, load);
+        return load;
     }
 }

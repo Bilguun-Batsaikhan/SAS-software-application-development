@@ -107,6 +107,7 @@ public class User {
                 }
             });
         }
+        load.tasks = Task.loadTasksByUserId(load.id);
         return load;
     }
 
@@ -144,6 +145,7 @@ public class User {
 //                }
 //            });
 //        }
+        u.tasks = Task.loadTasksByUserId(u.id);
         return u;
     }
 

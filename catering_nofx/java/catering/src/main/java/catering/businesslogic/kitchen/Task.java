@@ -42,6 +42,10 @@ public class Task {
 //        this.completed = false;
     }
 
+    public void setKitchenShift(KitchenShift ks) {
+        this.shift=ks;
+    }
+
     // initialize variables
     public void assignTask(KitchenShift shift,User cook,int portion,int quantity,int estimatedTime) {
         this.shift = shift;
@@ -108,6 +112,8 @@ public class Task {
         return activity;
     }
 
+
+    //this method should be called from summarySheet load
     public static ArrayList<Task> loadTasksBySumSheetId(int summary_sheet_id) {
         if (loadedTasks.containsKey(summary_sheet_id)) return loadedTasks.get(summary_sheet_id);
 
@@ -129,8 +135,66 @@ public class Task {
                 loadedTasksBySumSheetId.add(load);
             }
         });
-        //initialize the other Class type parameters
+        //initialize the other Class type parameters: KitchenActivity, User, KitchenShift
+        for (Task t : loadedTasksBySumSheetId) {
+            t.activity = KitchenActivity.loadActivityById(t.activity_id);
+            t.cook = User.loadUserById(t.cook_id);
+            t.shift = KitchenShift.loadKitchenShiftById(t.shift_id);
+        }
+        loadedTasks.put(summary_sheet_id, loadedTasksBySumSheetId); // I think I also should add this to the loadedTasks
         return loadedTasksBySumSheetId;
+    }
+
+    public static ArrayList<Task> loadTasksByShiftId(int id) {
+        String query = "SELECT * FROM kitchentask WHERE shiftId="+ id;
+        ArrayList<Task> shiftTasks =new ArrayList<>();
+        PersistenceManager.executeQuery(query, new ResultHandler() {
+            @Override
+            public void handle(ResultSet rs) throws SQLException {
+                Task t = new Task(null);
+                t.id = (rs.getInt("id"));
+                t.estimatedTime = (rs.getInt("estimatedTime"));
+                t.portion = (rs.getInt("portion"));
+                t.quantity = (rs.getInt("quantity"));
+                t.completed = (rs.getBoolean("completed"));
+                t.activity_id = (rs.getInt("activityId"));
+                t.cook_id = (rs.getInt("cookId"));
+                t.summarysheet_id = (rs.getInt("summarysheet_id"));
+                shiftTasks.add(t);
+            }
+        });
+        for(Task inside: shiftTasks)
+        {
+            inside.activity = KitchenActivity.loadActivityById(inside.activity_id);
+            inside.cook = User.loadUserById(inside.cook_id);
+        }
+        return  shiftTasks;
+    }
+
+    public static ArrayList<Task> loadTasksByUserId(int id) {
+        String query = "SELECT * FROM kitchentask WHERE cookId="+ id;
+        ArrayList<Task> userTasks =new ArrayList<>();
+        PersistenceManager.executeQuery(query, new ResultHandler() {
+            @Override
+            public void handle(ResultSet rs) throws SQLException {
+                Task t = new Task(null);
+                t.id = (rs.getInt("id"));
+                t.estimatedTime = (rs.getInt("estimatedTime"));
+                t.portion = (rs.getInt("portion"));
+                t.quantity = (rs.getInt("quantity"));
+                t.completed = (rs.getBoolean("completed"));
+                t.activity_id = (rs.getInt("activityId"));
+                t.shift_id = (rs.getInt("shiftId"));
+                t.summarysheet_id = (rs.getInt("summarysheet_id"));
+                userTasks.add(t);
+            }
+        });
+        for(Task inside: userTasks)
+        {
+            inside.activity = KitchenActivity.loadActivityById(inside.activity_id);
+            inside.shift = KitchenShift.loadKitchenShiftById(inside.shift_id);
+        }
+        return userTasks;
     }
 
     public static void saveKitchenTasks(SummarySheet summarySheet) {
