@@ -1,5 +1,7 @@
 package catering.businesslogic.kitchen;
 
+import catering.businesslogic.event.ServiceInfo;
+
 import java.util.ArrayList;
 
 public class KitchenPersistence implements SummaryEventReciever {
@@ -34,5 +36,10 @@ public class KitchenPersistence implements SummaryEventReciever {
     @Override
     public void updateRemoveTask(SummarySheet currentSummarySheet, Task task){
         Task.saveRemoveTask(task);
+    }
+    @Override
+    public void updateSummaryRecreate(SummarySheet oldSummarySheet, SummarySheet newSummarySheet) {
+//        ServiceInfo.saveRemoveServiceBySumId(oldSummarySheet.getId());
+        SummarySheet.saveRecreateSummarySheet(oldSummarySheet,newSummarySheet);
     }
 }

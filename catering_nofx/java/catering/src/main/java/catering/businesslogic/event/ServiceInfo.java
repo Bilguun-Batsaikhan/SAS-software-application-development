@@ -29,6 +29,11 @@ public class ServiceInfo implements EventItemInfo {
     private int approvedMenuID;
     private User assignedChef;
     private Menu approvedMenu;
+    private int sumsheet_id = -1;
+
+    public int getSumsheet_id() {
+        return sumsheet_id;
+    }
 
     public ServiceInfo(String name) {
         this.name = name;
@@ -38,6 +43,9 @@ public class ServiceInfo implements EventItemInfo {
         return id;
     }
 
+    public int getAssignedChefID() {
+        return assignedChefID;
+    }
 
     public String toString() {
         return "ID: " + this.id + " "+ name + ": " + date + " (" + timeStart + "-" + timeEnd + "), \n" + "participants: " + participants + " pp. \n" + "Assigned chef: " + assignedChef + "\n" + "Menu: " + approvedMenu + ".\n";
@@ -65,6 +73,17 @@ public class ServiceInfo implements EventItemInfo {
                 " WHERE id = " + service_id;
         PersistenceManager.executeUpdate(upd);
     }
+    /*
+    *     public static void saveRemoveTask(Task t) {
+        String rem = "DELETE FROM kitchentask WHERE id = " + t.getId();
+        System.out.println(t.getId());
+        PersistenceManager.executeUpdate(rem);
+    }*/
+//    public static void saveRemoveServiceBySumId(int id) {
+//        String rem = "DELETE FROM services WHERE sumsheet_id = " + id;
+//        PersistenceManager.executeUpdate(rem);
+//    }
+
     // STATIC METHODS FOR PERSISTENCE
     // This method is used to load all the services for a given event from the database.
     public static ArrayList<ServiceInfo> loadServiceInfoForEvent(int event_id) {
@@ -82,6 +101,7 @@ public class ServiceInfo implements EventItemInfo {
                 serv.timeEnd = rs.getTime("time_end");
                 serv.participants = rs.getInt("expected_participants");
                 serv.assignedChefID = rs.getInt("assigned_chef_id");
+                serv.sumsheet_id = rs.getInt("sumsheet_id");
                 result.add(serv);
             }
         });

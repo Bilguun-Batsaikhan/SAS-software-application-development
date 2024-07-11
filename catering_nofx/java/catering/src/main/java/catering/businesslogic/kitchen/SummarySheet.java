@@ -48,11 +48,6 @@ public class SummarySheet {
         // SQL query to insert a summary sheet
         String summaryInsertQuery = "INSERT INTO summarysheet (sorting, owner_id, service_id) VALUES (?, ?, ?)";
 
-        // SQL query to insert into the intermediary table
-        String summaryTaskInsertQuery = "INSERT INTO summarysheet_kitchentask (summarysheet_id, kitchentask_id) VALUES (?, ?)";
-
-        // SQL query to insert kitchen tasks
-        String taskInsertQuery = "INSERT INTO kitchentask (task_description) VALUES (?)";
         int[] result = PersistenceManager.executeBatchUpdate(summaryInsertQuery, 1, new BatchUpdateHandler() {
             @Override
             public void handleBatchItem(PreparedStatement ps, int batchCount) throws SQLException {
@@ -92,7 +87,7 @@ public class SummarySheet {
                     s.owner_id = rs.getInt("owner_id");
                     s.service_id = rs.getInt("service_id");
                     oldSummarySheetOwnerIds.add(rs.getInt("owner_id"));
-                    oldSummarySheetOwnerIds.add(rs.getInt("service_id"));
+                    oldSummarySheetsServiceIds.add(rs.getInt("service_id"));
                     oldSummarySheets.add(s);
                 } else {
                     SummarySheet s = new SummarySheet();
@@ -106,30 +101,33 @@ public class SummarySheet {
                 }
             }
         });
-        for (int i = 0; i < newSummarySheets.size(); i++) {
-            SummarySheet s = newSummarySheets.get(i);
-            // Create the owner from new summary sheet owner ids
-            s.owner = User.loadUserById(newSummarySheetOwnerIds.get(i));
-            s.service = ServiceInfo.loadServiceBySumSheetId(newSummarySheetServiceIds.get(i));
-            s.tasks = Task.loadTasksBySumSheetId(s.id);
-        }
-        for (int i = 0; i < oldSummarySheets.size(); i++) {
-            SummarySheet s = oldSummarySheets.get(i);
-            // Create the owner from old summary sheet owner ids
-            s.owner = User.loadUserById(oldSummarySheetOwnerIds.get(i));
-            s.service = ServiceInfo.loadServiceBySumSheetId(oldSummarySheetsServiceIds.get(i));
-            s.tasks = Task.loadTasksBySumSheetId(s.id);
-        }
+        loadSummarySheetParameters((ArrayList<SummarySheet>) newSummarySheets, newSummarySheetOwnerIds);
+        loadSummarySheetParameters((ArrayList<SummarySheet>) oldSummarySheets, oldSummarySheetOwnerIds);
 
         for(SummarySheet s: newSummarySheets) {
+            if(s.sorting.equals("difficulty")) {
+                Collections.sort(s.tasks, new Comparator<Task>() {
+                    @Override
+                    public int compare(Task t1, Task t2) {
+                        return t1.getActivity().getDifficulty().compareTo(t2.getActivity().getDifficulty());
+                    }
+                });
+            }
             loadedSummarySheets.put(s.id, s);
         }
-        //TODO: implement loadTasksBySumSheetId
 
         return new ArrayList<SummarySheet>(loadedSummarySheets.values());
     }
 
-
+    private static void loadSummarySheetParameters(ArrayList<SummarySheet> oldSummarySheets, ArrayList<Integer> oldSummarySheetOwnerIds) {
+        for (int i = 0; i < oldSummarySheets.size(); i++) {
+            SummarySheet s = oldSummarySheets.get(i);
+            // Create the owner from old summary sheet owner ids
+            s.owner = User.loadUserById(oldSummarySheetOwnerIds.get(i));
+            s.service = ServiceInfo.loadServiceBySumSheetId(s.id);
+            s.tasks = Task.loadTasksBySumSheetId(s.id);
+        }
+    }
 
 
     public List<KitchenActivity> removeDuplicates(ArrayList<KitchenActivity> kitchenActivities) {
@@ -157,7 +155,6 @@ public class SummarySheet {
         t.completeTask();
     }
 
-    //TODO: implement sorting by sortType
     public void sort(String sortType, Task firstTask, Task secondTask) {
         if(sortType.equals("difficulty")) {
             Collections.sort(tasks, new Comparator<Task>() {
@@ -199,6 +196,18 @@ public class SummarySheet {
     public void assignTaskWithoutCook(Task task, KitchenShift shift, int portion, int quantity, int estimatedTime) {
         task.assignTaskWithoutCook(shift, portion, quantity, estimatedTime);
     }
+
+    public static void saveRecreateSummarySheet(SummarySheet oldS, SummarySheet newS) {
+        ArrayList<Task> oldStasks = oldS.getTasks();
+        for(Task t: oldStasks) {
+            Task.saveRemoveAssignTask(t);
+            Task.saveRemoveTask(t);
+        }
+        String rem = "DELETE FROM summarysheet WHERE id = " + oldS.id;
+        PersistenceManager.executeUpdate(rem);
+        SummarySheet.saveKitchenSummary(newS);
+    }
+
 
     public User getOwner() {
         return owner;

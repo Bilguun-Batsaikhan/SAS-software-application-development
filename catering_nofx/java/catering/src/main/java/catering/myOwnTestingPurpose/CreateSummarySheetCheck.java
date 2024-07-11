@@ -44,42 +44,6 @@ public class CreateSummarySheetCheck {
             System.out.println("Exception at createSummarySheet: " + e);
         }
 
-//        ServiceCheck sc = new ServiceCheck();
-//        ArrayList<ServiceInfo> si = sc.serviceLoadTest();
-
-//        SummarySheet sh;
-//        ArrayList<SummarySheet> summarySheets = new ArrayList<>();
-//        for(int i = 0; i < si.size(); i++) {
-//            try {
-//                sh = ssm.createSummarySheet(si.get(i), eventInfo);
-//                System.out.println(i + ": " + sh);
-//                summarySheets.add(sh);
-//            } catch (Exception e) {
-//                System.out.println("Exception at iteration " + i + ": " + e);
-//            } finally {
-//                System.out.println("-----------------");
-//            }
-//        }
-//        System.out.println("The current SUMMARY SHEET:\n" + ssm.getCurrentSummarySheet());
-//        try {
-//            ssm.chooseSummarySheet(summarySheets.get(0));
-//            System.out.println("The current SUMMARY SHEET AFTER CHOOSE:\n" + ssm.getCurrentSummarySheet());
-//        } catch (Exception e) {
-//            System.out.println("Exception at chooseSummarySheet: " + e);
-//        }
-//
-//        ArrayList<Recipe> recipes = new ArrayList<>();
-//        recipes = Recipe.loadAllRecipes();
-//        for(Recipe r: recipes) {
-//            summarySheets.get(0).addTask(r);
-//        }
-//        System.out.println("The current SUMMARY SHEET AFTER ADDING A TASK:\n" + ssm.getCurrentSummarySheet());
-//        try {
-//            ssm.recreateSummarySheet(summarySheets.get(0));
-//            System.out.println("The current SUMMARY SHEET AFTER RECREATING:\n" + ssm.getCurrentSummarySheet());
-//        } catch (Exception e) {
-//            System.out.println("Exception at recreateSummarySheet: " + e);
-//        }
     }
     public void setSummarySheet(SummarySheet s) {
         this.s = s;

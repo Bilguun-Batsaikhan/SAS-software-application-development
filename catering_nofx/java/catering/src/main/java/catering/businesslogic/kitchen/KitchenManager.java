@@ -22,12 +22,16 @@ public class KitchenManager {
     // (1) createSummarySheet. This method creates a new SummarySheet for a given service and event.
     public SummarySheet createSummarySheet(ServiceInfo service, EventInfo eventInfo) throws UseCaseLogicException, SummarySheetException {
         User user = CatERing.getInstance().getUserManager().getCurrentUser();
-        if (!user.isChef() || !service.hasMenu()) {
+        if (!user.isChef() || !service.hasMenu() || service.getSumsheet_id() >= 0) {
             throw new UseCaseLogicException();
         }
         if (!service.chefAssigned()) {
             throw new SummarySheetException();
         }
+        if(service.getAssignedChefID() != user.getId()) {
+            throw new SummarySheetException();
+        }
+
         SummarySheet sumsheet = new SummarySheet(user, service);
         setCurrentSummarySheet(sumsheet);
         notifySummarySheetAdded(sumsheet);
@@ -45,7 +49,7 @@ public class KitchenManager {
             throw new SummarySheetException();
         }
         setCurrentSummarySheet(s);
-        return currentSummarySheet; // I don't know why this is returned (check DSD)
+        return currentSummarySheet;
     }
 
     // (1b) recreateSummarySheet. This method creates a new SummarySheet for a given old SummarySheet.
@@ -62,9 +66,10 @@ public class KitchenManager {
         oldSummarySheet.removeAllTasks();
         // Only thing is it's returning same tasks
         SummarySheet sumsheet = new SummarySheet(user, service);
+        ServiceInfo.saveSummaryId(sumsheet.getId(),service.getId());
 
         setCurrentSummarySheet(sumsheet);
-        //notifySummaryRecreate(oldSummarySheet); // I don't know why this is called with oldSummarySheet (Ask Alex)
+        notifySummaryRecreate(oldSummarySheet, sumsheet);
         return sumsheet;
     }
 
@@ -78,8 +83,8 @@ public class KitchenManager {
 
     // (3) sortSummarySheet. This method swaps two tasks in the currentSummarySheet.
     public void sortSummarySheet(String sortType, Task firstTask, Task secondTask) {
-        currentSummarySheet.sort(sortType, firstTask, secondTask); // I really don't know why we have to pass the sortType??? (Ask Alex)
-        //notifySummarySheetSorted(); //TODO: implement notifySummarySheetSorted (DSD seems wrong, calling this method on current summer sheet)
+        currentSummarySheet.sort(sortType, firstTask, secondTask);
+        //notifySummarySheetSorted();
     }
 
     // (5) assignTask. This method assigns a task to a cook from current summary sheet (task should be already added).
@@ -160,7 +165,7 @@ public class KitchenManager {
         } else {
             throw new SummarySheetException();
         }
-        notifySummarySheetModified(task); //TODO: implement notifySummarySheetModified
+        notifySummarySheetModified(task);
     }
     private void notifySummarySheetModified(Task task) {
         for (SummaryEventReciever r : this.summaryReceivers) {
@@ -173,7 +178,7 @@ public class KitchenManager {
             throw new UseCaseLogicException();
         }
         currentSummarySheet.removeAssign(task);
-        notifyRemoveAssignment(task); //TODO: implement notifySummarySheetRemoved
+        notifyRemoveAssignment(task);
     }
     private void notifyRemoveAssignment(Task task) {
         for (SummaryEventReciever r : this.summaryReceivers) {
@@ -191,7 +196,7 @@ public class KitchenManager {
         Task temp = task;
         currentSummarySheet.removeTask(task);
 
-        notifyRemoveTask(currentSummarySheet,temp); //TODO: implement notifySummarySheetRemoved
+        notifyRemoveTask(currentSummarySheet,temp);
     }
 
     // (5e) completeTask
@@ -200,7 +205,7 @@ public class KitchenManager {
             throw new UseCaseLogicException();
         }
         currentSummarySheet.completeTask(task);
-        notifyTaskCompleted(task); //TODO: implement notifyTaskCompleted
+        notifyTaskCompleted(task);
     }
     private void notifyRemoveTask(SummarySheet currentSummarySheet, Task task) {
         for (SummaryEventReciever r : this.summaryReceivers) {
@@ -214,7 +219,7 @@ public class KitchenManager {
     }
     // (4) getShiftBoard (this might've changed in the DSD, check it out)
     public ArrayList<KitchenShift> getShiftBoard() {
-        return CatERing.getInstance().getShiftManager().getShiftBoard(); //TODO: initialize getShiftBoard
+        return CatERing.getInstance().getShiftManager().getShiftBoard();
     }
 
     // notify 1
@@ -231,6 +236,12 @@ public class KitchenManager {
         }
     }
 
+    // notify 3
+    private void notifySummaryRecreate(SummarySheet oldSummarySheet, SummarySheet newSummarySheet) {
+        for (SummaryEventReciever r : this.summaryReceivers) {
+            r.updateSummaryRecreate(oldSummarySheet, newSummarySheet);
+        }
+    }
     public void addEventReceiver(SummaryEventReciever r) {
         this.summaryReceivers.add(r);
     }
