@@ -6,14 +6,20 @@ import catering.businesslogic.shift.Shift;
 import catering.businesslogic.user.User;
 import catering.persistence.BatchUpdateHandler;
 import catering.persistence.PersistenceManager;
+import catering.persistence.ResultHandler;
 
+import java.sql.Array;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Task {
     //TODO: initialize variables
+    private static Map<Integer, ArrayList<Task>> loadedTasks = new HashMap<Integer, ArrayList<Task>>();
+    private int id;
     private int estimatedTime;
     private int portion;
     private int quantity;
@@ -22,7 +28,13 @@ public class Task {
     private User cook;
     private KitchenShift shift;
 
+    private int activity_id;
+    private int cook_id;
+    private int shift_id;
+    private int summarysheet_id;
+
     public Task(KitchenActivity activity) {
+        id = 0;
         this.activity = activity;
 //        this.estimatedTime = activity.getEstimatedTime();
 //        this.portion = activity.getPortion();
@@ -96,8 +108,33 @@ public class Task {
         return activity;
     }
 
-    public static void saveKitchenTask(SummarySheet summarySheet) {
-        String activitiesToInsert = "INSERT INTO catering.kitchentask (estimatedTime, portion, quantity, completed, activityId, cookId, shiftId) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    public static ArrayList<Task> loadTasksBySumSheetId(int summary_sheet_id) {
+        if (loadedTasks.containsKey(summary_sheet_id)) return loadedTasks.get(summary_sheet_id);
+
+        Task load = new Task(null);
+        ArrayList<Task> loadedTasksBySumSheetId = new ArrayList<>();
+        String taskQuery = "SELECT * FROM kitchentask WHERE summarysheet_id='"+summary_sheet_id+"'";
+        PersistenceManager.executeQuery(taskQuery, new ResultHandler() {
+            @Override
+            public void handle(ResultSet rs) throws SQLException {
+                load.id = rs.getInt("id");
+                load.estimatedTime = rs.getInt("estimatedTime");
+                load.portion = rs.getInt("portion");
+                load.quantity = rs.getInt("quantity");
+                load.completed = rs.getBoolean("completed");
+                load.activity_id = rs.getInt("activityId");
+                load.cook_id = rs.getInt("cookId");
+                load.shift_id = rs.getInt("shiftId");
+                load.summarysheet_id = rs.getInt("summarysheet_id");
+                loadedTasksBySumSheetId.add(load);
+            }
+        });
+        //initialize the other Class type parameters
+        return loadedTasksBySumSheetId;
+    }
+
+    public static void saveKitchenTasks(SummarySheet summarySheet) {
+        String activitiesToInsert = "INSERT INTO catering.kitchentask (estimatedTime, portion, quantity, completed, activityId, cookId, shiftId, summarysheet_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         ArrayList<Task> tasks = summarySheet.getTasks();
         PersistenceManager.executeBatchUpdate(activitiesToInsert, tasks.size(), new BatchUpdateHandler() {
             @Override
@@ -110,6 +147,32 @@ public class Task {
                 ps.setInt(5, task.getActivity().getId());
                 ps.setNull(6, java.sql.Types.INTEGER); // Use NULL for cookId
                 ps.setNull(7, java.sql.Types.INTEGER); // Use NULL for shiftId
+                ps.setInt(8, summarySheet.getId());
+            }
+
+            @Override
+            public void handleGeneratedIds(ResultSet rs, int count) throws SQLException {
+                if (count == 0) {
+                    int generatedId = rs.getInt(1);
+                    System.out.println("Generated ID: " + generatedId);
+                }
+            }
+        });
+    }
+
+    public static void saveKitchenTask(int sumsheet_id, Task t) {
+        String activitiesToInsert = "INSERT INTO catering.kitchentask (estimatedTime, portion, quantity, completed, activityId, cookId, shiftId, summarysheet_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        PersistenceManager.executeBatchUpdate(activitiesToInsert, 1, new BatchUpdateHandler() {
+            @Override
+            public void handleBatchItem(PreparedStatement ps, int batchCount) throws SQLException {
+                ps.setInt(1, t.getEstimatedTime());
+                ps.setInt(2, 0);
+                ps.setInt(3, 0);
+                ps.setBoolean(4, false);
+                ps.setInt(5, t.getActivity().getId());
+                ps.setNull(6, java.sql.Types.INTEGER); // Use NULL for cookId
+                ps.setNull(7, java.sql.Types.INTEGER); // Use NULL for shiftId
+                ps.setInt(8, sumsheet_id);
             }
 
             @Override

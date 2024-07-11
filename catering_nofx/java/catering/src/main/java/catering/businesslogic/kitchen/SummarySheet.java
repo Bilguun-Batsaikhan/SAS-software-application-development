@@ -1,11 +1,15 @@
 package catering.businesslogic.kitchen;
 
 import catering.businesslogic.event.ServiceInfo;
+import catering.businesslogic.menu.Menu;
+import catering.businesslogic.menu.MenuItem;
+import catering.businesslogic.menu.Section;
 import catering.businesslogic.recipe.KitchenActivity;
 import catering.businesslogic.shift.KitchenShift;
 import catering.businesslogic.user.User;
 import catering.persistence.BatchUpdateHandler;
 import catering.persistence.PersistenceManager;
+import catering.persistence.ResultHandler;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -13,11 +17,15 @@ import java.sql.SQLException;
 import java.util.*;
 
 public class SummarySheet {
+    private static Map<Integer, SummarySheet> loadedSummarySheets = new HashMap<Integer, SummarySheet>();
     private int id;
     private String sorting;
     private ArrayList<Task> tasks;
     private User owner;
     private ServiceInfo service;
+
+    private int owner_id;
+    private int service_id;
 
     public SummarySheet(User owner, ServiceInfo service) {
         this.id = 0;
@@ -58,50 +66,69 @@ public class SummarySheet {
                 }
             }
         });
-        if(result[0] > 0) {
-            //save tasks
-
-        }
     }
-    //for loading the summary sheet look at serviceinfo example
-    /*
-    *     public static void saveNewMenu(Menu m) {
-        String menuInsert = "INSERT INTO catering.Menus (title, owner_id, published) VALUES (?, ?, ?);";
-        int[] result = PersistenceManager.executeBatchUpdate(menuInsert, 1, new BatchUpdateHandler() {
-            @Override
-            public void handleBatchItem(PreparedStatement ps, int batchCount) throws SQLException {
-                ps.setString(1, PersistenceManager.escapeString(m.title));
-                ps.setInt(2, m.owner.getId());
-                ps.setBoolean(3, m.published);
-            }
 
+    public static ArrayList<SummarySheet> loadAllSummarySheets() {
+        String query = "SELECT * FROM summarysheet WHERE " + true;
+        ArrayList<SummarySheet> newSummarySheets = new ArrayList<>();
+        ArrayList<SummarySheet> oldSummarySheets = new ArrayList<>();
+
+        ArrayList<Integer> newSummarySheetOwnerIds = new ArrayList<>();
+        ArrayList<Integer> oldSummarySheetOwnerIds = new ArrayList<>();
+
+        ArrayList<Integer> newSummarySheetServiceIds = new ArrayList<>();
+        ArrayList<Integer> oldSummarySheetsServiceIds = new ArrayList<>();
+
+        PersistenceManager.executeQuery(query, new ResultHandler() {
             @Override
-            public void handleGeneratedIds(ResultSet rs, int count) throws SQLException {
-                // should be only one
-                if (count == 0) {
-                    m.id = rs.getInt(1);
+            public void handle(ResultSet rs) throws SQLException {
+                int id = rs.getInt("id");
+
+                if (loadedSummarySheets.containsKey(id)) {
+                    SummarySheet s = loadedSummarySheets.get(id);
+                    s.sorting = rs.getString("sorting");
+                    s.owner_id = rs.getInt("owner_id");
+                    s.service_id = rs.getInt("service_id");
+                    oldSummarySheetOwnerIds.add(rs.getInt("owner_id"));
+                    oldSummarySheetOwnerIds.add(rs.getInt("service_id"));
+                    oldSummarySheets.add(s);
+                } else {
+                    SummarySheet s = new SummarySheet(null, null);
+                    s.id = id;
+                    s.sorting = rs.getString("sorting");
+                    s.owner_id = rs.getInt("owner_id");
+                    s.service_id = rs.getInt("service_id");
+                    newSummarySheetOwnerIds.add(rs.getInt("owner_id"));
+                    newSummarySheetServiceIds.add(rs.getInt("service_id"));
+                    newSummarySheets.add(s);
                 }
             }
         });
-
-        if (result[0] > 0) { // menu effettivamente inserito
-            // salva le features
-            featuresToDB(m);
-
-            // salva le sezioni
-            if (m.sections.size() > 0) {
-                Section.saveAllNewSections(m.id, m.sections);
-            }
-
-            // salva le voci libere
-            if (m.freeItems.size() > 0) {
-                MenuItem.saveAllNewItems(m.id, 0, m.freeItems);
-            }
-            loadedMenus.put(m.id, m);
+        for (int i = 0; i < newSummarySheets.size(); i++) {
+            SummarySheet s = newSummarySheets.get(i);
+            // Create the owner from new summary sheet owner ids
+            s.owner = User.loadUserById(newSummarySheetOwnerIds.get(i));
         }
+        for (int i = 0; i < oldSummarySheets.size(); i++) {
+            SummarySheet s = oldSummarySheets.get(i);
+            // Create the owner from old summary sheet owner ids
+            s.owner = User.loadUserById(oldSummarySheetOwnerIds.get(i));
+        }
+        for(int i = 0; i < newSummarySheets.size(); i++) {
+            SummarySheet s = newSummarySheets.get(i);
+            // Create the service from new summary sheet service ids
+            s.service = ServiceInfo.loadServiceById(newSummarySheetServiceIds.get(i)); //TODO: implement loadServiceById
+        }
+        for(int i = 0; i < oldSummarySheets.size(); i++) {
+            SummarySheet s = oldSummarySheets.get(i);
+            // Create the service from old summary sheet service ids
+            s.service = ServiceInfo.loadServiceById(oldSummarySheetsServiceIds.get(i)); //TODO: implement loadServiceById
+        }
+        for(SummarySheet s: newSummarySheets) {
+            loadedSummarySheets.put(s.id, s);
+        }
+        return new ArrayList<SummarySheet>(loadedSummarySheets.values());
     }
-    * */
-
 
 
 
@@ -188,6 +215,10 @@ public class SummarySheet {
 
     public ArrayList<Task> getTasks() {
         return tasks;
+    }
+
+    public int getId() {
+        return id;
     }
 
     // toString method
