@@ -9,4 +9,5 @@ public interface SummaryEventReciever {
     public void updateCompleteTask(SummarySheet currentSummarySheet, Task task);
     public void updateRemoveTask(SummarySheet currentSummarySheet, Task task);
     public void updateSummaryRecreate(SummarySheet currentSummarySheet, SummarySheet newSummarySheet);
+    public void updateSummarySorted(SummarySheet s);
 }

@@ -126,6 +126,16 @@ public class User {
         return u;
     }
 
+    public ArrayList<Task> getTasksByShiftId(int id) {
+        ArrayList<Task> userTaskByShift = new ArrayList<>();
+        for(Task userT: tasks)
+        {
+            if(userT.getShift().getId() == id)
+                userTaskByShift.add(userT);
+        }
+        return userTaskByShift;
+    }
+
     private void loadRoles(User u) {
         if (u.id > 0) {
             loadedUsers.put(u.id, u);

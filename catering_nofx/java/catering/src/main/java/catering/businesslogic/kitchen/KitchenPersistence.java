@@ -41,5 +41,11 @@ public class KitchenPersistence implements SummaryEventReciever {
     public void updateSummaryRecreate(SummarySheet oldSummarySheet, SummarySheet newSummarySheet) {
 //        ServiceInfo.saveRemoveServiceBySumId(oldSummarySheet.getId());
         SummarySheet.saveRecreateSummarySheet(oldSummarySheet,newSummarySheet);
+        Task.saveKitchenTasks(newSummarySheet);
+    }
+
+    @Override
+    public void updateSummarySorted(SummarySheet s) {
+        SummarySheet.saveSorting(s.getId(), s.getSorting());
     }
 }

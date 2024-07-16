@@ -16,6 +16,11 @@ import java.util.*;
 public class SummarySheet {
     private static Map<Integer, SummarySheet> loadedSummarySheets = new HashMap<Integer, SummarySheet>();
     private int id;
+
+    public String getSorting() {
+        return sorting;
+    }
+
     private String sorting;
     private ArrayList<Task> tasks;
     private User owner;
@@ -29,7 +34,7 @@ public class SummarySheet {
         this.owner = owner;
         this.service = service;
         this.tasks = new ArrayList<>();
-        this.sorting = "default";
+        this.sorting = "default"; //TODO: It's always default?
 
         ArrayList<KitchenActivity> kitchenActivities = service.getKitchenActivities();
         ArrayList<KitchenActivity> uniqueKitchenActivities = new ArrayList<>(removeDuplicates(kitchenActivities));
@@ -52,6 +57,7 @@ public class SummarySheet {
             @Override
             public void handleBatchItem(PreparedStatement ps, int batchCount) throws SQLException {
                 ps.setString(1, summarySheet.sorting);
+                // at the creation of the summary sheet, the owner and the service are initialized
                 ps.setInt(2, summarySheet.owner.getId());
                 ps.setInt(3, summarySheet.service.getId());
             }
@@ -112,6 +118,8 @@ public class SummarySheet {
                         return t1.getActivity().getDifficulty().compareTo(t2.getActivity().getDifficulty());
                     }
                 });
+            } else {
+                s.sorting ="default";
             }
             loadedSummarySheets.put(s.id, s);
         }
@@ -163,6 +171,7 @@ public class SummarySheet {
                     return t1.getActivity().getDifficulty().compareTo(t2.getActivity().getDifficulty());
                 }
             });
+            sorting = sortType;
         } else {
             if(firstTask == null || secondTask == null) {
                 throw new IllegalArgumentException("Both tasks must be not null");
@@ -207,7 +216,18 @@ public class SummarySheet {
         PersistenceManager.executeUpdate(rem);
         SummarySheet.saveKitchenSummary(newS);
     }
+    /*
+    * public static void saveDescription(MenuItem mi) {
+        String upd = "UPDATE MenuItems SET description = '" + PersistenceManager.escapeString(mi.getDescription()) +
+                "' WHERE id = " + mi.id;
+        PersistenceManager.executeUpdate(upd);
+    }
+    * */
 
+    public static void saveSorting(int sumId, String sorting) {
+        String upd = "UPDATE summarysheet SET sorting = '" + PersistenceManager.escapeString(sorting) + "' WHERE id = " + sumId;
+        PersistenceManager.executeUpdate(upd);
+    }
 
     public User getOwner() {
         return owner;

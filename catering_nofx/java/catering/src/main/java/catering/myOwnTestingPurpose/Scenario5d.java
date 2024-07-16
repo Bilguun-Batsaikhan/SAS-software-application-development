@@ -1,23 +1,25 @@
 package catering.myOwnTestingPurpose;
 
 import catering.businesslogic.CatERing;
-import catering.businesslogic.event.EventInfo;
-import catering.businesslogic.event.ServiceInfo;
 import catering.businesslogic.kitchen.KitchenManager;
 import catering.businesslogic.kitchen.SummarySheet;
+import catering.businesslogic.kitchen.Task;
 
 import java.util.ArrayList;
 
-public class SaveKitchenSummary7 {
-    public static void main(String[] args) {
+public class Scenario5d {
+    public static void main(String[] ars) {
         CatERing.getInstance().getUserManager().fakeLogin("Lidia");
-        ArrayList<EventInfo> eventInfos = CatERing.getInstance().getEventManager().getEventInfo();
-        EventInfo eventInfo = eventInfos.get(0);
-        ArrayList<ServiceInfo> serviceInfos = eventInfo.getServices();
+        ArrayList<SummarySheet> summarySheets = SummarySheet.loadAllSummarySheets();
         KitchenManager ssm = CatERing.getInstance().getKitchenManager();
 
         try {
-            SummarySheet ss = ssm.createSummarySheet(serviceInfos.get(0), eventInfo);
+            ssm.chooseSummarySheet(summarySheets.get(0));
+            SummarySheet sh = ssm.getCurrentSummarySheet();
+            ArrayList<Task> tasks = sh.getTasks();
+
+            Task first = tasks.get(1);
+            ssm.removeTask(first);
         } catch (Exception e) {
             System.out.println("Exception at createSummarySheet: " + e);
         }

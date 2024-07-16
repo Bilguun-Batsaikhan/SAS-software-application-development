@@ -27,6 +27,7 @@ public class Task {
     private KitchenActivity activity;
     private User cook;
     private KitchenShift shift;
+    private int order;
 
     private int activity_id;
     private int cook_id;
@@ -51,8 +52,8 @@ public class Task {
         this.shift = shift;
         this.cook = cook;
         this.estimatedTime = estimatedTime;
-        if(portion > 0) this.portion = portion;
-        if(quantity > 0) this.quantity = quantity;
+        if(portion > -1) this.portion = portion;
+        if(quantity > -1) this.quantity = quantity;
         //the boolean completed is not initialized here (check DSD)
     }
 
@@ -60,17 +61,17 @@ public class Task {
         this.shift = shift;
         this.completed = false;
         this.estimatedTime = estimatedTime;
-        if(estimatedTime > 0) this.estimatedTime = estimatedTime;
-        if(portion > 0) this.portion = portion;
-        if(quantity > 0) this.quantity = quantity;
+        if(estimatedTime > -1) this.estimatedTime = estimatedTime;
+        if(portion > -1) this.portion = portion;
+        if(quantity > -1) this.quantity = quantity;
     }
 
     public Task updateTask(KitchenShift shift, User cook, int portion, int quantity, int estimatedTime) {
         if(shift != null) this.shift = shift;
         if(cook != null) this.cook = cook;
-        if(estimatedTime > 0) this.estimatedTime = estimatedTime;
-        if(portion > 0) this.portion = portion;
-        if(quantity > 0) this.quantity = quantity;
+        if(estimatedTime > -1) this.estimatedTime = estimatedTime;
+        if(portion > -1) this.portion = portion;
+        if(quantity > -1) this.quantity = quantity;
         return this;
     }
 
@@ -86,8 +87,8 @@ public class Task {
 
     public void completeTask() {
         this.completed = true;
-        shift.removeTask(this);
-        cook.removeTask(this);
+        if(shift != null) this.shift.removeTask(this);
+        if(cook != null) this.cook.removeTask(this);
         this.cook = null;
         this.shift = null;
     }
@@ -142,8 +143,10 @@ public class Task {
         // Initialize the other Class type parameters: KitchenActivity, User, KitchenShift
         for (Task t : loadedTasksBySumSheetId) {
             t.activity = KitchenActivity.loadActivityById(t.activity_id);
-            t.cook = User.loadUserById(t.cook_id);
-            t.shift = KitchenShift.loadKitchenShiftById(t.shift_id);
+            if(t.cook_id > 0)
+                t.cook = User.loadUserById(t.cook_id);
+            if(t.shift_id > 0)
+                t.shift = KitchenShift.loadKitchenShiftById(t.shift_id);
         }
 
         // Cache the loaded tasks for future reference
@@ -208,6 +211,7 @@ public class Task {
     public static void saveKitchenTasks(SummarySheet summarySheet) {
         String activitiesToInsert = "INSERT INTO catering.kitchentask (estimatedTime, portion, quantity, completed, activityId, cookId, shiftId, summarysheet_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         ArrayList<Task> tasks = summarySheet.getTasks();
+        System.out.println("Tasks: " + tasks.size());
         PersistenceManager.executeBatchUpdate(activitiesToInsert, tasks.size(), new BatchUpdateHandler() {
             @Override
             public void handleBatchItem(PreparedStatement ps, int batchCount) throws SQLException {
@@ -224,10 +228,10 @@ public class Task {
 
             @Override
             public void handleGeneratedIds(ResultSet rs, int count) throws SQLException {
-                if (count == 0) {
-                    int generatedId = rs.getInt(1);
-                    System.out.println("Generated ID: " + generatedId);
-                }
+                Task t = tasks.get(count);
+                t.id = rs.getInt(1);
+//                    int generatedId = rs.getInt(1);
+//                    System.out.println("Generated ID: " + generatedId);
             }
         });
     }
@@ -251,6 +255,7 @@ public class Task {
             public void handleGeneratedIds(ResultSet rs, int count) throws SQLException {
                 if (count == 0) {
                     int generatedId = rs.getInt(1);
+                    t.id = generatedId;
                     System.out.println("Generated ID: " + generatedId);
                 }
             }
@@ -279,9 +284,9 @@ public class Task {
     public static void saveUpdateByModifyTask(Task task) {
         StringBuilder queryBuilder = new StringBuilder("UPDATE kitchentask SET ");
         Boolean bool = true;
-        appendCondition(queryBuilder, "shiftId", task.getShift() != null ? task.getShift().getId() : null, bool);
+        appendCondition(queryBuilder, "shiftId", task.getShift() != null ? task.getShift().getId() : java.sql.Types.INTEGER, bool);
         bool = false;
-        appendCondition(queryBuilder, "cookId", task.getCook() != null ? task.getCook().getId() : null, bool);
+        appendCondition(queryBuilder, "cookId", task.getCook() != null ? task.getCook().getId() : java.sql.Types.INTEGER, bool);
         appendCondition(queryBuilder, "portion", task.getPortion(), bool);
         appendCondition(queryBuilder, "quantity", task.getQuantity(), bool);
         appendCondition(queryBuilder, "estimatedTime", task.getEstimatedTime(), bool);
@@ -326,6 +331,45 @@ public class Task {
         PersistenceManager.executeUpdate(rem);
     }
 
+//    public static void updateTaskOrderInDb(ArrayList<Task> tasks) {
+//        String query = "UPDATE kitchentask SET " +
+//                "estimatedTime = ?, " +
+//                "portion = ?, " +
+//                "quantity = ?, " +
+//                "completed = ?, " +
+//                "activityId = ?, " +
+//                "cookId = ?, " +
+//                "shiftId = ?, " +
+//                "summarysheet_id = ?, " +
+//                "`order` = ? " +
+//                "WHERE id = ?";
+//
+//        BatchUpdateHandler handler = new BatchUpdateHandler() {
+//            @Override
+//            public void handleBatchItem(PreparedStatement ps, int index) throws SQLException {
+//                Task task = tasks.get(index);
+//                ps.setInt(1, task.getEstimatedTime());
+//                ps.setInt(2, task.getPortion());
+//                ps.setInt(3, task.getQuantity());
+//                ps.setBoolean(4, task.isCompleted());
+//                ps.setInt(5, task.activity.getId());
+//                ps.setInt(6, task.cook.getId());
+//                ps.setInt(7, task.shift.getId());
+//                ps.setInt(8, task.summarysheet_id);
+//                ps.setInt(9, task.getOrder());
+//                ps.setInt(10, task.getId());
+//            }
+//
+//            @Override
+//            public void handleGeneratedIds(ResultSet keys, int count) throws SQLException {
+//                // Handle generated keys if needed
+//            }
+//        };
+//
+//        PersistenceManager.executeBatchUpdate(query, tasks.size(), handler);
+//    }
+
+
     public int getId() {
         return id;
     }
@@ -336,6 +380,17 @@ public class Task {
 
     public int getQuantity() {
         return quantity;
+    }
+
+    public int getOrder() {
+        return order;
+    }
+
+    public void setOrder(int order) {
+        this.order = order;
+    }
+    public String getActivityName() {
+        return activity.getName();
     }
 
     @Override

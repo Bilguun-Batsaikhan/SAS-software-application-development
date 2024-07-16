@@ -10,6 +10,8 @@ import catering.businesslogic.shift.KitchenShift;
 import catering.businesslogic.user.User;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 
 public class KitchenManager {
     private SummarySheet currentSummarySheet;
@@ -22,7 +24,8 @@ public class KitchenManager {
     // (1) createSummarySheet. This method creates a new SummarySheet for a given service and event.
     public SummarySheet createSummarySheet(ServiceInfo service, EventInfo eventInfo) throws UseCaseLogicException, SummarySheetException {
         User user = CatERing.getInstance().getUserManager().getCurrentUser();
-        if (!user.isChef() || !service.hasMenu() || service.getSumsheet_id() >= 0) {
+        //service.getSumsheet_id() > 0 means that the service already has a summary sheet
+        if (!user.isChef() || !service.hasMenu() || service.getSumsheet_id() > 0) {
             throw new UseCaseLogicException();
         }
         if (!service.chefAssigned()) {
@@ -31,7 +34,6 @@ public class KitchenManager {
         if(service.getAssignedChefID() != user.getId()) {
             throw new SummarySheetException();
         }
-
         SummarySheet sumsheet = new SummarySheet(user, service);
         setCurrentSummarySheet(sumsheet);
         notifySummarySheetAdded(sumsheet);
@@ -66,10 +68,10 @@ public class KitchenManager {
         oldSummarySheet.removeAllTasks();
         // Only thing is it's returning same tasks
         SummarySheet sumsheet = new SummarySheet(user, service);
-        ServiceInfo.saveSummaryId(sumsheet.getId(),service.getId());
 
         setCurrentSummarySheet(sumsheet);
         notifySummaryRecreate(oldSummarySheet, sumsheet);
+        ServiceInfo.saveSummaryId(sumsheet.getId(),service.getId());
         return sumsheet;
     }
 
@@ -80,11 +82,17 @@ public class KitchenManager {
         return t; // why return here?
     }
 
-
     // (3) sortSummarySheet. This method swaps two tasks in the currentSummarySheet.
     public void sortSummarySheet(String sortType, Task firstTask, Task secondTask) {
         currentSummarySheet.sort(sortType, firstTask, secondTask);
-        //notifySummarySheetSorted();
+//        ArrayList<Task> sortedTasks = currentSummarySheet.getTasks();
+//        Collections.shuffle(sortedTasks);
+//        for (int i = 0; i < sortedTasks.size(); i++) {
+//            sortedTasks.get(i).setOrder(i + 1); // or i if you want zero-based order
+//        }
+        //Task.updateTaskOrderInDb(sortedTasks);
+        notifySummarySheetSorted(currentSummarySheet);
+
     }
 
     // (5) assignTask. This method assigns a task to a cook from current summary sheet (task should be already added).
@@ -134,14 +142,22 @@ public class KitchenManager {
             ArrayList<KitchenShift> shifts = s.getShiftsInGroup();
             for (KitchenShift ks : shifts) {
                 totalDuration += ks.getDuration();
-                ArrayList<Task> userTasks = cook.getTasks();
+                // given shift_id return all tasks
+                ArrayList<Task> userTasks = cook.getTasksByShiftId(ks.getId());
+
                 for (Task t : userTasks) {
                     totalEstimatedTime += t.getEstimatedTime();
                 }
             }
             return totalDuration > totalEstimatedTime + eT;
         } else {
-            ArrayList<Task> userTasks = cook != null ? cook.getTasks() : task.getCook().getTasks();
+            ArrayList<Task> userTasks;
+            assert shift != null;
+            if (cook != null) {
+                userTasks = cook.getTasksByShiftId(shift.getId());
+            } else {
+                userTasks = task.getCook().getTasksByShiftId(shift.getId());
+            }
             for (Task t : userTasks) {
                 totalEstimatedTime += t.getEstimatedTime();
             }
@@ -154,7 +170,7 @@ public class KitchenManager {
         if (this.currentSummarySheet == null || !currentSummarySheet.hasTask(task)) {
             throw new UseCaseLogicException();
         }
-        if (!task.isCompleted()) {
+        if (task.isCompleted()) {
             throw new SummarySheetException();
         }
 
@@ -180,11 +196,7 @@ public class KitchenManager {
         currentSummarySheet.removeAssign(task);
         notifyRemoveAssignment(task);
     }
-    private void notifyRemoveAssignment(Task task) {
-        for (SummaryEventReciever r : this.summaryReceivers) {
-            r.updateTaskRemoveAssign(this.getCurrentSummarySheet(), task);
-        }
-    }
+
     // (5d) remove task
     public void removeTask(Task task) throws UseCaseLogicException, SummarySheetException {
         if (this.currentSummarySheet == null || !currentSummarySheet.hasTask(task)) {
@@ -225,12 +237,11 @@ public class KitchenManager {
     // notify 1
     private void notifySummarySheetAdded(SummarySheet sumsheet) {
         for (SummaryEventReciever r : this.summaryReceivers) {
-            //r.updateTaskCreated(sumsheet); TODO: move it to task added
             r.updateSummaryCreated(sumsheet);
         }
     }
     // notify 2
-    public void notifyTaskAdded(SummarySheet sumsheet, Task t) {
+    private void notifyTaskAdded(SummarySheet sumsheet, Task t) {
         for (SummaryEventReciever r : this.summaryReceivers) {
             r.updateTaskCreated(sumsheet, t);
         }
@@ -240,6 +251,18 @@ public class KitchenManager {
     private void notifySummaryRecreate(SummarySheet oldSummarySheet, SummarySheet newSummarySheet) {
         for (SummaryEventReciever r : this.summaryReceivers) {
             r.updateSummaryRecreate(oldSummarySheet, newSummarySheet);
+        }
+    }
+    // notify 4
+    private void notifySummarySheetSorted(SummarySheet s) {
+        for (SummaryEventReciever r : this.summaryReceivers) {
+            r.updateSummarySorted(s);
+        }
+    }
+    // notify 5
+    private void notifyRemoveAssignment(Task task) {
+        for (SummaryEventReciever r : this.summaryReceivers) {
+            r.updateTaskRemoveAssign(this.getCurrentSummarySheet(), task);
         }
     }
     public void addEventReceiver(SummaryEventReciever r) {

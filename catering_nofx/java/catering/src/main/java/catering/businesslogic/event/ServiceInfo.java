@@ -28,7 +28,7 @@ public class ServiceInfo implements EventItemInfo {
     private int assignedChefID;
     private int approvedMenuID;
     private User assignedChef;
-    private Menu approvedMenu;
+    private Menu approvedMenu = null;
     private int sumsheet_id = -1;
 
     public int getSumsheet_id() {
@@ -61,6 +61,7 @@ public class ServiceInfo implements EventItemInfo {
 
     //TODO: implement getKitchenActivities
     public ArrayList<KitchenActivity> getKitchenActivities() {
+        System.out.println(approvedMenu.getID());
         return this.approvedMenu.getMenuItems();
         //return new ArrayList<>();
     }
@@ -88,7 +89,7 @@ public class ServiceInfo implements EventItemInfo {
     // This method is used to load all the services for a given event from the database.
     public static ArrayList<ServiceInfo> loadServiceInfoForEvent(int event_id) {
         ArrayList<ServiceInfo> result = new ArrayList<>();
-        String query = "SELECT id, name, approved_menu_id, service_date, time_start, time_end, expected_participants, assigned_chef_id FROM Services WHERE event_id = " + event_id;
+        String query = "SELECT id, name, approved_menu_id, service_date, time_start, time_end, expected_participants, sumsheet_id, assigned_chef_id FROM Services WHERE event_id = " + event_id;
         PersistenceManager.executeQuery(query, new ResultHandler() {
             @Override
             public void handle(ResultSet rs) throws SQLException {
@@ -109,15 +110,19 @@ public class ServiceInfo implements EventItemInfo {
             s.assignedChef = User.loadUserById(s.assignedChefID);
             loadedServices.put(s.id, s);
             ArrayList<Menu> menus = Menu.loadAllMenus();
+            //TODO: something is wrong here
             for(Menu m: menus) {
                 if(m.getId() == s.approvedMenuID) {
                     s.approvedMenu = m;
+                    break;
                     //.println(m.getMenuItems());
                 }
             }
         }
         return result;
     }
+
+    public Menu getApprovedMenu() {return approvedMenu;}
 
     public static ServiceInfo loadServiceBySumSheetId(int sumsheet_id) {
         if(loadedServices.containsKey(sumsheet_id)) return loadedServices.get(sumsheet_id);
