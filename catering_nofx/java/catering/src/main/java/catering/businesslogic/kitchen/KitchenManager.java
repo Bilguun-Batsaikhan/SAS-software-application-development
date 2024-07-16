@@ -37,7 +37,6 @@ public class KitchenManager {
         SummarySheet sumsheet = new SummarySheet(user, service);
         setCurrentSummarySheet(sumsheet);
         notifySummarySheetAdded(sumsheet);
-        ServiceInfo.saveSummaryId(sumsheet.getId(),service.getId());
         return sumsheet;
     }
 
@@ -71,66 +70,31 @@ public class KitchenManager {
 
         setCurrentSummarySheet(sumsheet);
         notifySummaryRecreate(oldSummarySheet, sumsheet);
-        ServiceInfo.saveSummaryId(sumsheet.getId(),service.getId());
         return sumsheet;
     }
 
     // (2) addTask. This method adds a task to the currentSummarySheet.
-    public Task addTask(KitchenActivity ka) throws UseCaseLogicException, SummarySheetException {
+    public void addTask(KitchenActivity ka) throws UseCaseLogicException {
+        if(this.currentSummarySheet == null) {
+            throw new UseCaseLogicException();
+        }
         Task t = currentSummarySheet.addTask(ka);
         notifyTaskAdded(currentSummarySheet, t);
-        return t; // why return here?
     }
 
     // (3) sortSummarySheet. This method swaps two tasks in the currentSummarySheet.
-    public void sortSummarySheet(String sortType, Task firstTask, Task secondTask) {
+    public void sortSummarySheet(String sortType, Task firstTask, Task secondTask) throws UseCaseLogicException {
+        if(this.currentSummarySheet == null) {
+            throw new UseCaseLogicException();
+        }
         currentSummarySheet.sort(sortType, firstTask, secondTask);
-//        ArrayList<Task> sortedTasks = currentSummarySheet.getTasks();
-//        Collections.shuffle(sortedTasks);
-//        for (int i = 0; i < sortedTasks.size(); i++) {
-//            sortedTasks.get(i).setOrder(i + 1); // or i if you want zero-based order
-//        }
-        //Task.updateTaskOrderInDb(sortedTasks);
         notifySummarySheetSorted(currentSummarySheet);
 
     }
 
-    // (5) assignTask. This method assigns a task to a cook from current summary sheet (task should be already added).
-    public void assignTask(Task task, KitchenShift shift, User cook, int portion, int quantity, int estimatedTime) throws UseCaseLogicException, SummarySheetException {
-        if (this.currentSummarySheet == null || !currentSummarySheet.hasTask(task)) {
-            throw new UseCaseLogicException();
-        }
-
-        if (checkTotalDuration(task, shift, estimatedTime, cook)) {
-            task.assignTask(shift, cook, portion, quantity, estimatedTime);
-        } else {
-            throw new SummarySheetException();
-        }
-        // in DSD I wrote notifyAssignSummarySheet(Task)
-        notifySummarySheetAssigned(task, true); //TODO: implement notifySummarySheetAssigned
-    }
-
-    private void notifySummarySheetAssigned(Task task, boolean changeCook) {
-        for (SummaryEventReciever r : this.summaryReceivers) {
-            r.updateTaskAssigned(this.getCurrentSummarySheet(), task, changeCook);
-        }
-    }
-    // (5a) assign task without cook
-    public void assignTaskWithoutCook(Task task, KitchenShift shift, int portion, int quantity, int estimatedTime) throws UseCaseLogicException {
-        if (this.currentSummarySheet == null || !currentSummarySheet.hasTask(task)) {
-            throw new UseCaseLogicException();
-        }
-        currentSummarySheet.assignTaskWithoutCook(task, shift, portion, quantity, estimatedTime);
-        notifySummarySheetAssigned(task,false); //TODO: implement notifySummarySheetAssigned
-    }
-
-    // getters and setters for currentSummarySheet
-    public void setCurrentSummarySheet(SummarySheet s) {
-        this.currentSummarySheet = s;
-    }
-
-    public SummarySheet getCurrentSummarySheet() {
-        return this.currentSummarySheet;
+    // (4) getShiftBoard
+    public ArrayList<KitchenShift> getShiftBoard() {
+        return CatERing.getInstance().getShiftManager().getShiftBoard();
     }
 
     private boolean checkTotalDuration(Task task, KitchenShift shift, int estimatedTime, User cook) {
@@ -163,6 +127,28 @@ public class KitchenManager {
             }
             return s.getDuration() > totalEstimatedTime + eT;
         }
+    }
+    // (5) assignTask. This method assigns a task to a cook from current summary sheet (task should be already added).
+    public void assignTask(Task task, KitchenShift shift, User cook, int portion, int quantity, int estimatedTime) throws UseCaseLogicException, SummarySheetException {
+        if (this.currentSummarySheet == null || !currentSummarySheet.hasTask(task)) {
+            throw new UseCaseLogicException();
+        }
+
+        if (checkTotalDuration(task, shift, estimatedTime, cook)) {
+            task.assignTask(shift, cook, portion, quantity, estimatedTime);
+        } else {
+            throw new SummarySheetException();
+        }
+        notifySummarySheetAssigned(task, true);
+    }
+
+    // (5a) assign task without cook
+    public void assignTaskWithoutCook(Task task, KitchenShift shift, int portion, int quantity, int estimatedTime) throws UseCaseLogicException {
+        if (this.currentSummarySheet == null || !currentSummarySheet.hasTask(task)) {
+            throw new UseCaseLogicException();
+        }
+        currentSummarySheet.assignTaskWithoutCook(task, shift, portion, quantity, estimatedTime);
+        notifySummarySheetAssigned(task,false);
     }
 
     // (5b) modifyTask.
@@ -207,8 +193,7 @@ public class KitchenManager {
         }
         Task temp = task;
         currentSummarySheet.removeTask(task);
-
-        notifyRemoveTask(currentSummarySheet,temp);
+        notifyRemoveTask(currentSummarySheet, temp);
     }
 
     // (5e) completeTask
@@ -219,56 +204,70 @@ public class KitchenManager {
         currentSummarySheet.completeTask(task);
         notifyTaskCompleted(task);
     }
-    private void notifyRemoveTask(SummarySheet currentSummarySheet, Task task) {
-        for (SummaryEventReciever r : this.summaryReceivers) {
-            r.updateRemoveTask(this.getCurrentSummarySheet(), task);
-        }
-    }
-    private void notifyTaskCompleted(Task task) {
-        for (SummaryEventReciever r : this.summaryReceivers) {
-            r.updateCompleteTask(this.getCurrentSummarySheet(), task);
-        }
-    }
-    // (4) getShiftBoard (this might've changed in the DSD, check it out)
-    public ArrayList<KitchenShift> getShiftBoard() {
-        return CatERing.getInstance().getShiftManager().getShiftBoard();
-    }
 
-    // notify 1
+
+
     private void notifySummarySheetAdded(SummarySheet sumsheet) {
         for (SummaryEventReciever r : this.summaryReceivers) {
             r.updateSummaryCreated(sumsheet);
         }
+        ServiceInfo.saveSummaryId(sumsheet.getId(),sumsheet.getService().getId());
     }
-    // notify 2
+
     private void notifyTaskAdded(SummarySheet sumsheet, Task t) {
         for (SummaryEventReciever r : this.summaryReceivers) {
             r.updateTaskCreated(sumsheet, t);
         }
     }
 
-    // notify 3
     private void notifySummaryRecreate(SummarySheet oldSummarySheet, SummarySheet newSummarySheet) {
         for (SummaryEventReciever r : this.summaryReceivers) {
             r.updateSummaryRecreate(oldSummarySheet, newSummarySheet);
         }
+        ServiceInfo.saveSummaryId(newSummarySheet.getId(),oldSummarySheet.getService().getId());
     }
-    // notify 4
+
     private void notifySummarySheetSorted(SummarySheet s) {
         for (SummaryEventReciever r : this.summaryReceivers) {
             r.updateSummarySorted(s);
         }
     }
-    // notify 5
+
     private void notifyRemoveAssignment(Task task) {
         for (SummaryEventReciever r : this.summaryReceivers) {
             r.updateTaskRemoveAssign(this.getCurrentSummarySheet(), task);
         }
     }
+
+    private void notifySummarySheetAssigned(Task task, boolean changeCook) {
+        for (SummaryEventReciever r : this.summaryReceivers) {
+            r.updateTaskAssigned(this.getCurrentSummarySheet(), task, changeCook);
+        }
+    }
+
+    private void notifyRemoveTask(SummarySheet currentSummarySheet, Task task) {
+        for (SummaryEventReciever r : this.summaryReceivers) {
+            r.updateRemoveTask(currentSummarySheet, task);
+        }
+    }
+
+    private void notifyTaskCompleted(Task task) {
+        for (SummaryEventReciever r : this.summaryReceivers) {
+            r.updateCompleteTask(this.getCurrentSummarySheet(), task);
+        }
+    }
+
     public void addEventReceiver(SummaryEventReciever r) {
         this.summaryReceivers.add(r);
     }
+    // getters and setters for currentSummarySheet
+    public void setCurrentSummarySheet(SummarySheet s) {
+        this.currentSummarySheet = s;
+    }
 
+    public SummarySheet getCurrentSummarySheet() {
+        return this.currentSummarySheet;
+    }
     // toString method
     public String toString() {
         return "KitchenManager: " + currentSummarySheet.toString();

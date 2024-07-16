@@ -12,9 +12,5 @@ public abstract class Shift {
     Date expirationDate;
 
     public abstract boolean hasGroup();
-//    public ArrayList<Shift> getShiftsInGroup() { // probably not needed
-//        return new ArrayList<>();
-//    }
-
 
 }

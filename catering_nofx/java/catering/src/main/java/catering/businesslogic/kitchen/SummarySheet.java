@@ -216,13 +216,6 @@ public class SummarySheet {
         PersistenceManager.executeUpdate(rem);
         SummarySheet.saveKitchenSummary(newS);
     }
-    /*
-    * public static void saveDescription(MenuItem mi) {
-        String upd = "UPDATE MenuItems SET description = '" + PersistenceManager.escapeString(mi.getDescription()) +
-                "' WHERE id = " + mi.id;
-        PersistenceManager.executeUpdate(upd);
-    }
-    * */
 
     public static void saveSorting(int sumId, String sorting) {
         String upd = "UPDATE summarysheet SET sorting = '" + PersistenceManager.escapeString(sorting) + "' WHERE id = " + sumId;

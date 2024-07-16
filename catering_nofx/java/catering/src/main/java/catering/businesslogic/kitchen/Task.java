@@ -37,10 +37,6 @@ public class Task {
     public Task(KitchenActivity activity) {
         id = 0;
         this.activity = activity;
-//        this.estimatedTime = activity.getEstimatedTime();
-//        this.portion = activity.getPortion();
-//        this.quantity = activity.getQuantity();
-//        this.completed = false;
     }
 
     public void setKitchenShift(KitchenShift ks) {
@@ -330,45 +326,6 @@ public class Task {
         System.out.println(t.getId());
         PersistenceManager.executeUpdate(rem);
     }
-
-//    public static void updateTaskOrderInDb(ArrayList<Task> tasks) {
-//        String query = "UPDATE kitchentask SET " +
-//                "estimatedTime = ?, " +
-//                "portion = ?, " +
-//                "quantity = ?, " +
-//                "completed = ?, " +
-//                "activityId = ?, " +
-//                "cookId = ?, " +
-//                "shiftId = ?, " +
-//                "summarysheet_id = ?, " +
-//                "`order` = ? " +
-//                "WHERE id = ?";
-//
-//        BatchUpdateHandler handler = new BatchUpdateHandler() {
-//            @Override
-//            public void handleBatchItem(PreparedStatement ps, int index) throws SQLException {
-//                Task task = tasks.get(index);
-//                ps.setInt(1, task.getEstimatedTime());
-//                ps.setInt(2, task.getPortion());
-//                ps.setInt(3, task.getQuantity());
-//                ps.setBoolean(4, task.isCompleted());
-//                ps.setInt(5, task.activity.getId());
-//                ps.setInt(6, task.cook.getId());
-//                ps.setInt(7, task.shift.getId());
-//                ps.setInt(8, task.summarysheet_id);
-//                ps.setInt(9, task.getOrder());
-//                ps.setInt(10, task.getId());
-//            }
-//
-//            @Override
-//            public void handleGeneratedIds(ResultSet keys, int count) throws SQLException {
-//                // Handle generated keys if needed
-//            }
-//        };
-//
-//        PersistenceManager.executeBatchUpdate(query, tasks.size(), handler);
-//    }
-
 
     public int getId() {
         return id;

@@ -21,7 +21,6 @@ public class KitchenShift extends Shift {
     int duration;
     GroupShift group;
     ArrayList<Task> tasks;
-    //Constructor is missing
     ArrayList<KitchenShift> KitchenShiftBoard;
     private static Map<Integer, KitchenShift> all = new HashMap<>();
 
